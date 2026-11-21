@@ -53,9 +53,9 @@
   ].join('');
 
   function injectCss() {
-    if (document.getElementById('xxj-app-icon-grid')) return;
+    if (document.getElementById('xxj-app-icon-grid-v2')) return;
     var s = document.createElement('style');
-    s.id = 'xxj-app-icon-grid';
+    s.id = 'xxj-app-icon-grid-v2';
     s.textContent = CSS;
     document.head.appendChild(s);
   }
