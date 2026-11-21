@@ -1,4 +1,4 @@
-/* 主屏 App 图标 v9（meixinji / 没心机）
+/* 主屏 App 图标 v10（meixinji / 没心机）
  *  ─ 底栏（主线 / 消息 / 角色库 / 我的）完全不动
  *  ─ 主屏网格去掉与底栏重复的「我的」（聊天、人设保留）
  *  ─ 一页 8 个，放不下的自动到第二页；左右滑动 + 淡入淡出 + 页码点
@@ -9,6 +9,8 @@
  *  ─ v8 调整：对话框字号改小；页面改为物理贴边（消除顶部黑条）
  *  ─ v9 调整：整体下移一点；图标网格靠近底栏（填掉底栏上方空档）
  *  ─ v9 调整：已装成 App 时不再主动请求全屏（不弹系统提示）
+ *  ─ v10 新增：「学习」App（移植自茶茶机版本，七科：语数英地可排任务＋监督员，理化生只留角色留下的材料）
+ *  ─ v10 调整：学习占原「表情包」格位，表情包移到第二页首格
  *
  *  用法：仓库根目录放本文件；index.html 的 <head> 里加一行
  *         <script src="app-grid.js"></script>
@@ -22,6 +24,7 @@
     ["漫游", "ph-footprints"],
     ["世界书", "ph-book-open-text"],
     ["论坛", "ph-chats-circle"],
+    ["学习", "ph-notebook"],
     ["表情包", "ph-smiley"],
     ["装扮", "ph-paint-brush"],
     ["设置", "ph-gear-six"],
@@ -126,9 +129,9 @@
   }
 
   function injectCss() {
-    if (document.getElementById('xxj-app-icon-grid-v9')) return;
+    if (document.getElementById('xxj-app-icon-grid-v10')) return;
     var s = document.createElement('style');
-    s.id = 'xxj-app-icon-grid-v9';
+    s.id = 'xxj-app-icon-grid-v10';
     s.textContent = CSS;
     document.head.appendChild(s);
   }
@@ -182,8 +185,8 @@
   }
 
   function bindSwipe(grid) {
-    if (grid.dataset.xxjSwipeV9 === '1') return;
-    grid.dataset.xxjSwipeV9 = '1';
+    if (grid.dataset.xxjSwipeV10 === '1') return;
+    grid.dataset.xxjSwipeV10 = '1';
     var x0 = 0, y0 = 0, t0 = 0, tracking = false;
     grid.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 1) return;
@@ -220,8 +223,8 @@
 
   function buildGrid() {
     var grid = document.getElementById('app-grid');
-    if (!grid || grid.dataset.xxjTileGrid === 'v9') return;
-    grid.dataset.xxjTileGrid = 'v9';
+    if (!grid || grid.dataset.xxjTileGrid === 'v10') return;
+    grid.dataset.xxjTileGrid = 'v10';
 
     var pageCount = Math.ceil(APPS.length / PER_PAGE);
     var pagesHtml = '';
@@ -247,12 +250,13 @@
     '论坛': function () { if (typeof openForumScreen === 'function') openForumScreen(); else toast('论坛模块未加载'); },
     '装扮': function () { openWardrobeScreen(); },
     '备份': function () { openBackupZipModal(); },
-    '表情包': function () { openStickerScreen('manage'); }
+    '表情包': function () { openStickerScreen('manage'); },
+    '学习': function () { openStudy(); }
   };
 
   function bindClicks() {
-    if (document.__xxjTileClickV9) return;
-    document.__xxjTileClickV9 = true;
+    if (document.__xxjTileClickV10) return;
+    document.__xxjTileClickV10 = true;
     document.addEventListener('click', function (e) {
       var t = e.target && e.target.closest ? e.target.closest('#app-grid [data-app]') : null;
       if (!t) return;
@@ -287,15 +291,15 @@
   }
 
   function armFullscreen() {
-    if (document.__xxjFsV9) return;
-    document.__xxjFsV9 = true;
+    if (document.__xxjFsV10) return;
+    document.__xxjFsV10 = true;
     /* 已经装成 App（standalone / fullscreen 显示模式）就别再请求，避免弹系统提示 */
     if (inAppDisplay()) return;
-    try { if (sessionStorage.getItem('xxjFsV9') === '1') return; } catch (e) {}
+    try { if (sessionStorage.getItem('xxjFsV10') === '1') return; } catch (e) {}
     var first = function () {
       window.removeEventListener('touchend', first, true);
       window.removeEventListener('click', first, true);
-      try { sessionStorage.setItem('xxjFsV9', '1'); } catch (e) {}
+      try { sessionStorage.setItem('xxjFsV10', '1'); } catch (e) {}
       requestFs();
     };
     window.addEventListener('touchend', first, true);
@@ -303,14 +307,14 @@
   }
 
   /* ===== 顶部时间卡片 → 对话框（p2 风格，文字可改） ===== */
-  var LS_R = 'xxjChatRightV9';
+  var LS_R = 'xxjChatRightV10';
 
   function buildChat() {
     var card = document.getElementById('desktop-hero-card');
     var note = document.getElementById('hero-note');
     if (!card || !note) return;
-    if (card.dataset.xxjChat === 'v9') return;
-    card.dataset.xxjChat = 'v9';
+    if (card.dataset.xxjChat === 'v10') return;
+    card.dataset.xxjChat = 'v10';
 
     var right = card.querySelector('.xxj-bub-r');
     if (!right) {
@@ -348,6 +352,296 @@
       tip.textContent = 'Tap bubbles to edit';
       card.appendChild(tip);
     }
+  }
+
+  /* ===== 学习 App（移植自茶茶机的版本，纯 DOM 实现） ===== */
+  var STUDY_KEY = 'xxjStudyV1';
+  var SUBJECTS = [
+    { k: 'cn', n: '语文', main: true, hint: '阅读 · 文言 · 作文' },
+    { k: 'ma', n: '数学', main: true, hint: '函数 · 几何 · 概率' },
+    { k: 'en', n: '英语', main: true, hint: '单词 · 语法 · 听说' },
+    { k: 'ge', n: '地理', main: true, hint: '地图 · 气候 · 人文' },
+    { k: 'ph', n: '物理', main: false, hint: '受力 · 电路 · 公式' },
+    { k: 'ch', n: '化学', main: false, hint: '方程式 · 实验 · 物质' },
+    { k: 'bi', n: '生物', main: false, hint: '细胞 · 遗传 · 生态' }
+  ];
+  var MATS = [['paper', '做过的卷子'], ['trace', '学习痕迹'], ['wrong', '错题本']];
+
+  var STUDY_CSS = [
+    '.xxj-study{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;',
+    'background:#0f1218;color:#dfe9f5;font-family:-apple-system,"PingFang SC",system-ui,sans-serif;}',
+    '.xxj-study.open{display:flex;}',
+    '.xxj-sd-top{flex:none;display:flex;align-items:center;gap:10px;padding:14px 16px 6px;}',
+    '.xxj-sd-back{border:0;background:transparent;color:#9fb6cf;font-size:12px;padding:6px 2px;cursor:pointer;}',
+    '.xxj-sd-title{margin-left:auto;font-family:ui-monospace,monospace;font-size:10px;letter-spacing:.18em;opacity:.55;}',
+    '.xxj-sd-body{flex:1;min-height:0;overflow-y:auto;padding:4px 16px 30px;-webkit-overflow-scrolling:touch;}',
+    '.xxj-sd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}',
+    '.xxj-sd-card{all:unset;box-sizing:border-box;padding:14px 14px 12px;border-radius:18px;cursor:pointer;',
+    'background:rgba(38,43,52,.9);border:1px solid rgba(255,255,255,.10);display:flex;flex-direction:column;gap:6px;}',
+    '.xxj-sd-card:active{transform:scale(.97);}',
+    '.xxj-sd-name{font-size:15px;letter-spacing:.04em;}',
+    '.xxj-sd-hint{font-size:10px;opacity:.5;letter-spacing:.03em;}',
+    '.xxj-sd-foot{font-size:10.5px;color:#8fa8c2;font-family:ui-monospace,monospace;margin-top:4px;}',
+    '.xxj-sd-sec{margin-top:8px;}',
+    '.xxj-sd-sec-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;}',
+    '.xxj-sd-sec-t{font-size:22px;margin:0;letter-spacing:.06em;}',
+    '.xxj-sd-sec-s{font-size:10px;opacity:.45;}',
+    '.xxj-sd-block{background:rgba(38,43,52,.86);border:1px solid rgba(255,255,255,.10);border-radius:18px;',
+    'padding:12px 12px 10px;margin-bottom:10px;}',
+    '.xxj-sd-block-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}',
+    '.xxj-sd-lab{font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.62;}',
+    '.xxj-sd-count{font-size:10.5px;font-family:ui-monospace,monospace;opacity:.55;}',
+    '.xxj-sd-tasks,.xxj-sd-mats{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:6px;}',
+    '.xxj-sd-tasks li{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:6px 8px;border-radius:12px;',
+    'background:rgba(255,255,255,.05);}',
+    '.xxj-sd-tasks li.done .xxj-sd-task-t{opacity:.42;text-decoration:line-through;}',
+    '.xxj-sd-check{width:18px;height:18px;flex:none;border-radius:50%;border:1px solid rgba(255,255,255,.28);',
+    'background:transparent;color:#dfe9f5;font-size:10px;line-height:1;padding:0;cursor:pointer;}',
+    '.xxj-sd-tasks li.done .xxj-sd-check{background:#5b7fa6;border-color:#5b7fa6;}',
+    '.xxj-sd-task-t{flex:1;min-width:0;word-break:break-word;}',
+    '.xxj-sd-del{flex:none;border:0;background:transparent;color:rgba(220,232,245,.45);font-size:13px;padding:0 2px;cursor:pointer;}',
+    '.xxj-sd-mats li{display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 8px;border-radius:10px;',
+    'background:rgba(255,255,255,.04);}',
+    '.xxj-sd-mats li span{flex:1;min-width:0;word-break:break-word;}',
+    '.xxj-sd-empty{font-size:11px;opacity:.4;margin:2px 0 8px;}',
+    '.xxj-sd-add{display:flex;gap:8px;align-items:center;}',
+    '.xxj-sd-input{flex:1;min-width:0;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);',
+    'border-radius:10px;color:#dfe9f5;font-size:12px;padding:8px 10px;outline:none;}',
+    '.xxj-sd-input:focus{border-color:rgba(91,127,166,.7);}',
+    '.xxj-sd-btn{flex:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.10);color:#e6eef7;',
+    'border-radius:10px;font-size:11.5px;padding:8px 12px;cursor:pointer;}',
+    '.xxj-sd-sup{display:flex;align-items:center;gap:10px;margin-bottom:10px;}',
+    '.xxj-sd-mat{padding-top:8px;border-top:1px dashed rgba(255,255,255,.10);}',
+    '.xxj-sd-mat:first-child{border-top:0;padding-top:0;}',
+    '.xxj-sd-mat-t{font-size:11px;opacity:.6;margin:0 0 6px;}',
+    'body:not(.dark) .xxj-study{background:#f4f6fa;color:#20242c;}',
+    'body:not(.dark) .xxj-sd-card,body:not(.dark) .xxj-sd-block{background:#fff;border-color:rgba(20,30,45,.10);}',
+    'body:not(.dark) .xxj-sd-input{background:#f1f4f8;border-color:rgba(20,30,45,.14);color:#20242c;}',
+    'body:not(.dark) .xxj-sd-btn{background:#eef2f7;border-color:rgba(20,30,45,.12);color:#2a3442;}',
+    'body:not(.dark) .xxj-sd-back{color:#5b7fa6;}',
+    'body:not(.dark) .xxj-sd-tasks li,body:not(.dark) .xxj-sd-mats li{background:rgba(20,30,45,.04);}'
+  ].join('');
+
+  function injectStudyCss() {
+    if (document.getElementById('xxj-study-css-v1')) return;
+    var s = document.createElement('style');
+    s.id = 'xxj-study-css-v1';
+    s.textContent = STUDY_CSS;
+    document.head.appendChild(s);
+  }
+
+  function blankStudy() { return { tasks: {}, mats: {}, sup: {} }; }
+
+  function loadStudy() {
+    var d = blankStudy();
+    try {
+      var raw = localStorage.getItem(STUDY_KEY);
+      if (raw) d = JSON.parse(raw) || d;
+    } catch (e) {}
+    d.tasks = d.tasks || {}; d.mats = d.mats || {}; d.sup = d.sup || {};
+    SUBJECTS.forEach(function (s) {
+      d.tasks[s.k] = Array.isArray(d.tasks[s.k]) ? d.tasks[s.k] : [];
+      d.mats[s.k] = d.mats[s.k] || {};
+      MATS.forEach(function (m) {
+        d.mats[s.k][m[0]] = Array.isArray(d.mats[s.k][m[0]]) ? d.mats[s.k][m[0]] : [];
+      });
+    });
+    return d;
+  }
+
+  function saveStudy() {
+    try { localStorage.setItem(STUDY_KEY, JSON.stringify(study)); } catch (e) {}
+  }
+
+  function esc(t) {
+    return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  var study = null, sdSub = null;
+
+  function studyHomeHtml() {
+    return '<section class="xxj-sd-grid">' + SUBJECTS.map(function (s) {
+      var t = study.tasks[s.k] || [];
+      var done = t.filter(function (x) { return x.d; }).length;
+      var mats = MATS.reduce(function (n, m) { return n + (study.mats[s.k][m[0]] || []).length; }, 0);
+      var foot = s.main ? (done + '/' + t.length + ' 今日') : (mats + ' 份记录');
+      return '<button type="button" class="xxj-sd-card" data-sd-open="' + s.k + '">'
+        + '<span class="xxj-sd-name">' + s.n + '</span>'
+        + '<span class="xxj-sd-hint">' + s.hint + '</span>'
+        + '<span class="xxj-sd-foot">' + foot + '</span></button>';
+    }).join('') + '</section>';
+  }
+
+  function sdTasksHtml(s) {
+    var t = study.tasks[s.k] || [];
+    var done = t.filter(function (x) { return x.d; }).length;
+    return '<div class="xxj-sd-block"><div class="xxj-sd-block-head">'
+      + '<span class="xxj-sd-lab">今日任务</span><span class="xxj-sd-count">' + done + '/' + t.length + '</span></div>'
+      + (t.length ? '<ul class="xxj-sd-tasks">' + t.map(function (x, i) {
+        return '<li class="' + (x.d ? 'done' : '') + '">'
+          + '<button type="button" class="xxj-sd-check" data-sd-tgl="' + s.k + '" data-i="' + i + '">' + (x.d ? '✓' : '') + '</button>'
+          + '<span class="xxj-sd-task-t">' + esc(x.t) + '</span>'
+          + '<button type="button" class="xxj-sd-del" data-sd-delt="' + s.k + '" data-i="' + i + '">×</button></li>';
+      }).join('') + '</ul>' : '<p class="xxj-sd-empty">还没有任务，先加一条</p>')
+      + '<div class="xxj-sd-add"><input class="xxj-sd-input" data-sd-newt="' + s.k + '" placeholder="加一条今日任务">'
+      + '<button type="button" class="xxj-sd-btn" data-sd-addt="' + s.k + '">添加</button></div></div>';
+  }
+
+  function sdMatsHtml(s) {
+    return '<div class="xxj-sd-block"><div class="xxj-sd-block-head">'
+      + '<span class="xxj-sd-lab">角色留下的</span></div>'
+      + MATS.map(function (m) {
+        var arr = study.mats[s.k][m[0]] || [];
+        return '<div class="xxj-sd-mat"><p class="xxj-sd-mat-t">' + m[1] + '</p>'
+          + (arr.length ? '<ul class="xxj-sd-mats">' + arr.map(function (x, i) {
+            return '<li><span>' + esc(x) + '</span>'
+              + '<button type="button" class="xxj-sd-del" data-sd-delm="' + s.k + '" data-m="' + m[0] + '" data-i="' + i + '">×</button></li>';
+          }).join('') + '</ul>' : '<p class="xxj-sd-empty">暂无</p>')
+          + '<div class="xxj-sd-add"><input class="xxj-sd-input" data-sd-newm="' + s.k + '" data-m="' + m[0] + '" placeholder="记一条">'
+          + '<button type="button" class="xxj-sd-btn" data-sd-addm="' + s.k + '" data-m="' + m[0] + '">＋</button></div></div>';
+      }).join('') + '</div>';
+  }
+
+  function sdSubjectHtml(k) {
+    var s = SUBJECTS.filter(function (x) { return x.k === k; })[0];
+    if (!s) return '';
+    var html = '<section class="xxj-sd-sec">'
+      + '<div class="xxj-sd-sec-head"><p class="xxj-sd-sec-t">' + s.n + '</p>'
+      + '<span class="xxj-sd-sec-s">' + s.hint + '</span></div>';
+    if (s.main) {
+      html += sdTasksHtml(s);
+      html += '<div class="xxj-sd-block"><div class="xxj-sd-block-head"><span class="xxj-sd-lab">监督员</span></div>'
+        + '<div class="xxj-sd-add"><input class="xxj-sd-input" data-sd-sup="' + s.k + '" value="'
+        + esc(study.sup[s.k] || '') + '" placeholder="谁在督促这一科"></div></div>';
+    }
+    html += sdMatsHtml(s);
+    return html + '</section>';
+  }
+
+  function renderStudy() {
+    var body = document.getElementById('xxj-sd-body');
+    if (!body) return;
+    body.innerHTML = sdSub ? sdSubjectHtml(sdSub) : studyHomeHtml();
+  }
+
+  function ensureStudy() {
+    var el = document.getElementById('xxj-study');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'xxj-study';
+    el.className = 'xxj-study';
+    el.innerHTML = '<header class="xxj-sd-top">'
+      + '<button type="button" class="xxj-sd-back" data-sd-back>‹ 桌面</button>'
+      + '<span class="xxj-sd-title">STUDY</span></header>'
+      + '<div class="xxj-sd-body" id="xxj-sd-body"></div>';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function openStudy() {
+    injectStudyCss();
+    ensureStudy();
+    bindStudy();
+    study = loadStudy();
+    sdSub = null;
+    renderStudy();
+    document.getElementById('xxj-study').classList.add('open');
+  }
+
+  function closeStudy() {
+    var el = document.getElementById('xxj-study');
+    if (el) el.classList.remove('open');
+  }
+
+  function sdVal(sel, k, m, t) {
+    var q = document.querySelector('[data-sd-' + sel + '="' + k + '"]' + (m ? '[data-m="' + m + '"]' : ''));
+    if (!q) return '';
+    var v = (q.value || '').trim();
+    return v;
+  }
+
+  function bindStudy() {
+    var el = ensureStudy();
+    if (el.dataset.bind === '1') return;
+    el.dataset.bind = '1';
+
+    el.addEventListener('click', function (e) {
+      var t = e.target && e.target.closest ? e.target.closest(
+        '[data-sd-back],[data-sd-open],[data-sd-tgl],[data-sd-delt],[data-sd-addt],[data-sd-delm],[data-sd-addm]'
+      ) : null;
+      if (!t) return;
+      var d = t.dataset;
+
+      if (d.sdBack !== undefined) {
+        e.preventDefault(); e.stopPropagation();
+        if (sdSub) { sdSub = null; renderStudy(); }
+        else closeStudy();
+        return;
+      }
+      if (d.sdOpen) { e.preventDefault(); e.stopPropagation(); sdSub = d.sdOpen; renderStudy(); return; }
+      if (d.sdTgl) {
+        e.preventDefault(); e.stopPropagation();
+        var arr = study.tasks[d.sdTgl] || [];
+        var i = parseInt(d.i, 10);
+        if (arr[i]) { arr[i].d = !arr[i].d; saveStudy(); renderStudy(); }
+        return;
+      }
+      if (d.sdDelt) {
+        e.preventDefault(); e.stopPropagation();
+        var a2 = study.tasks[d.sdDelt] || [];
+        a2.splice(parseInt(d.i, 10), 1);
+        saveStudy(); renderStudy();
+        return;
+      }
+      if (d.sdAddt) {
+        e.preventDefault(); e.stopPropagation();
+        var v = sdVal('newt', d.sdAddt);
+        if (!v) { toast('先写一条任务'); return; }
+        (study.tasks[d.sdAddt] = study.tasks[d.sdAddt] || []).push({ t: v, d: false });
+        saveStudy(); renderStudy();
+        return;
+      }
+      if (d.sdDelm) {
+        e.preventDefault(); e.stopPropagation();
+        var m = d.m, arr2 = (study.mats[d.sdDelm] || {})[m] || [];
+        arr2.splice(parseInt(d.i, 10), 1);
+        saveStudy(); renderStudy();
+        return;
+      }
+      if (d.sdAddm) {
+        e.preventDefault(); e.stopPropagation();
+        var v2 = sdVal('newm', d.sdAddm, d.m);
+        if (!v2) { toast('先写点内容'); return; }
+        var mm = (study.mats[d.sdAddm] = study.mats[d.sdAddm] || {});
+        (mm[d.m] = mm[d.m] || []).push(v2);
+        saveStudy(); renderStudy();
+        return;
+      }
+    }, true);
+
+    el.addEventListener('change', function (e) {
+      var t = e.target;
+      if (!t || !t.dataset || !t.dataset.sdSup) return;
+      study.sup[t.dataset.sdSup] = (t.value || '').trim();
+      saveStudy();
+    }, true);
+
+    el.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var t = e.target;
+      if (!t || !t.dataset) return;
+      if (t.dataset.sdNewt) {
+        e.preventDefault();
+        var b = el.querySelector('[data-sd-addt="' + t.dataset.sdNewt + '"]');
+        if (b) b.click();
+      } else if (t.dataset.sdNewm) {
+        e.preventDefault();
+        var b2 = el.querySelector('[data-sd-addm="' + t.dataset.sdNewm + '"][data-m="' + t.dataset.m + '"]');
+        if (b2) b2.click();
+      }
+    }, true);
   }
 
   var n = 0;
