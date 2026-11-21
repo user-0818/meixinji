@@ -39,11 +39,11 @@
   var PEOPLE = [
     {
       k: 'wsh', name: '', tag: '角色 A', device: '小米手环 8', tint: '#e2a86f',
-      wakeBase: 365, bedBase: 1395, sleepDeep: 0.22, stepsBase: 7600, hrRest: 58
+      wakeBase: 365, bedBase: 1395, sleepDeep: 0.24, stepsBase: 7900, hrRest: 54, hrPeak: 148
     },
     {
       k: 'whd', name: '', tag: '角色 B', device: 'Apple Watch S8', tint: '#7fb2e5',
-      wakeBase: 372, bedBase: 1410, sleepDeep: 0.19, stepsBase: 6200, hrRest: 66
+      wakeBase: 372, bedBase: 1410, sleepDeep: 0.21, stepsBase: 6600, hrRest: 59, hrPeak: 155
     }
   ];
 
@@ -109,7 +109,8 @@
     var rest = p.hrRest + ri(r, -3, 4) + (lateNight ? ri(r, 3, 7) : 0);
     var series = [];
     series.push({ h: 6, v: rest + 12 });
-    series.push({ h: 10, v: 168 + ri(r, -12, 10) });   /* 跑操 */
+    series.push({ h: 10, v: p.hrPeak + ri(r, -9, 5) });  /* 大课间跑操峰值 */
+    series.push({ h: 11, v: rest + 26 });                /* 跑完快速回血 */
     series.push({ h: 12, v: rest + 18 });
     series.push({ h: 15, v: school ? rest + 22 : rest + 8 });
     series.push({ h: 18, v: rest + 14 });
@@ -210,6 +211,15 @@
     '.xxj-lf-sleep-line{display:flex;justify-content:space-between;font-size:10.5px;opacity:.6;margin-top:6px;}',
     '.xxj-lf-hr{display:flex;align-items:flex-end;gap:3px;height:64px;margin-top:4px;}',
     '.xxj-lf-hr span{flex:1;background:linear-gradient(180deg,#8fc0ea,#4a6f96);border-radius:3px;min-height:6px;}',
+    '.xxj-lf-hr span.peak{background:linear-gradient(180deg,#f0b57c,#c98a4d);}',
+    '.xxj-lf-hr span.low{background:rgba(143,192,234,.55);}',
+    '.xxj-lf-hr-kv{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:9px;}',
+    '.xxj-lf-hr-kv div{display:flex;align-items:center;gap:5px;font-size:10px;}',
+    '.xxj-lf-hr-kv i{width:6px;height:6px;border-radius:2px;flex:none;}',
+    '.xxj-lf-hr-kv i.peak{background:#e2a86f;}',
+    '.xxj-lf-hr-kv i.low{background:#8fc0ea;}',
+    '.xxj-lf-hr-kv b{font-size:12px;font-weight:500;font-family:ui-monospace,monospace;}',
+    '.xxj-lf-hr-kv span{opacity:.55;flex:1;}',
     '.xxj-lf-hr-x{display:flex;justify-content:space-between;font-size:9px;opacity:.4;margin-top:3px;}',
     '.xxj-lf-sp{display:flex;flex-direction:column;gap:7px;}',
     '.xxj-lf-sp-row{display:flex;align-items:center;gap:8px;font-size:11.5px;}',
@@ -274,13 +284,26 @@
     var pct = Math.min(100, Math.round(d.steps / 8000 * 100));
 
     var hrBars = '';
-    var maxHr = 185;
+    var hrVals = [];
     for (var h = 6; h <= 23; h++) {
       var v = d.rest + 6;
       d.series.forEach(function (pt) { if (pt.h === h) v = pt.v; });
-      if (h > 6 && h < 22) v += Math.round(12 * Math.sin((h - 6) / 16 * Math.PI));
-      hrBars += '<span style="height:' + Math.max(8, Math.round(v / maxHr * 64)) + 'px"></span>';
+      var hasPt = false;
+      d.series.forEach(function (pt) { if (pt.h === h) hasPt = true; });
+      if (!hasPt) v += Math.round(9 * Math.sin((h - 6) / 16 * Math.PI));
+      hrVals.push({ h: h, v: v });
     }
+    var hMax = 0, hMin = 0;
+    hrVals.forEach(function (x, i) {
+      if (x.v > hrVals[hMax].v) hMax = i;
+      if (x.v < hrVals[hMin].v) hMin = i;
+    });
+    var scale = hrVals[hMax].v + 6;
+    hrVals.forEach(function (x, i) {
+      var cls = i === hMax ? ' class="peak"' : (i === hMin ? ' class="low"' : '');
+      hrBars += '<span' + cls + ' style="height:' + Math.max(8, Math.round(x.v / scale * 64)) + 'px"'
+        + ' title="' + x.h + ':00 · ' + x.v + '"></span>';
+    });
 
     return '<div class="xxj-lf-card">'
       + '<p class="xxj-lf-lab">今天 · ' + personName(p) + '<em>' + esc(p.device) + ' · ' + st + '</em></p>'
@@ -303,9 +326,13 @@
       + '<div><b>' + s.score + '</b><span>睡眠评分</span></div>'
       + '<div><b>' + (s.late ? '熬夜' : '正常') + (s.lazy ? ' · 赖床' : '') + '</b><span>昨晚状态</span></div>'
       + '</div></div>'
-      + '<div class="xxj-lf-card"><p class="xxj-lf-lab">心率<em>日间曲线</em></p>'
+      + '<div class="xxj-lf-card"><p class="xxj-lf-lab">心率<em>最高 ' + hrVals[hMax].v + ' · 最低 ' + hrVals[hMin].v + '</em></p>'
       + '<div class="xxj-lf-hr">' + hrBars + '</div>'
-      + '<div class="xxj-lf-hr-x"><span>06</span><span>12</span><span>18</span><span>23</span></div></div>'
+      + '<div class="xxj-lf-hr-x"><span>06</span><span>12</span><span>18</span><span>23</span></div>'
+      + '<div class="xxj-lf-hr-kv">'
+      + '<div><i class="peak"></i><b>' + hrVals[hMax].v + '</b><span>' + pad(hrVals[hMax].h) + ':00 最高 · ' + (hrVals[hMax].v > d.rest + 40 ? '跑操' : '活动') + '</span></div>'
+      + '<div><i class="low"></i><b>' + hrVals[hMin].v + '</b><span>' + pad(hrVals[hMin].h) + ':00 最低 · ' + (hrVals[hMin].v <= d.rest + 8 ? '静息' : '课间') + '</span></div>'
+      + '</div></div>'
       + '<div class="xxj-lf-card"><p class="xxj-lf-lab">消费<em>' + d.spend.length + ' 笔</em></p>'
       + '<div class="xxj-lf-sp">' + d.spend.map(function (x) {
         return '<div class="xxj-lf-sp-row"><em>' + esc(x.t) + '</em><span class="tag">' + esc(x.place) + '</span>'
