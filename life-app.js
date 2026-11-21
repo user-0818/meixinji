@@ -39,11 +39,11 @@
   var PEOPLE = [
     {
       k: 'wsh', name: '', tag: '角色 A', device: '小米手环 8', tint: '#e2a86f',
-      wakeBase: 365, bedBase: 1395, sleepDeep: 0.24, stepsBase: 7900, hrRest: 54, hrPeak: 148
+      wakeBase: 365, bedBase: 1395, sleepDeep: 0.24, stepsBase: 7900, hrRest: 54, hrPeak: 140
     },
     {
       k: 'whd', name: '', tag: '角色 B', device: 'Apple Watch S8', tint: '#7fb2e5',
-      wakeBase: 372, bedBase: 1410, sleepDeep: 0.21, stepsBase: 6600, hrRest: 59, hrPeak: 155
+      wakeBase: 372, bedBase: 1410, sleepDeep: 0.21, stepsBase: 6600, hrRest: 59, hrPeak: 147
     }
   ];
 
@@ -63,7 +63,24 @@
     });
   }
 
-  /* ===== 一天的数据生成（同人同日固定）===== */
+  /* ===== 时间轴：只生成到"此刻"为止的数据 ===== */
+  function nowMinute() { var n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
+  function hhmmToMin(x) { var a = String(x).split(':'); return (+a[0] || 0) * 60 + (+a[1] || 0); }
+
+  function stepFrac(nowMin, wakeMin) {
+    var pts = [[wakeMin, 0], [wakeMin + 45, 0.05], [600, 0.20], [660, 0.36],
+               [750, 0.45], [1020, 0.63], [1170, 0.71], [1310, 0.89], [1440, 1]];
+    if (nowMin <= pts[0][0]) return 0;
+    for (var i = 1; i < pts.length; i++) {
+      if (nowMin <= pts[i][0]) {
+        var a = pts[i - 1], b = pts[i];
+        return a[1] + (b[1] - a[1]) * ((nowMin - a[0]) / (b[0] - a[0]));
+      }
+    }
+    return 1;
+  }
+
+  /* ===== 一天的数据生成（同人同日固定，但只算到此刻）===== */
   function genDay(p, date) {
     var r = rng(hash(p.k + '#' + dayKey(date)));
     var wk = date.getDay();                 /* 0 周日；山东常见周六也上课 */
@@ -142,13 +159,37 @@
 
     /* 近况（他们会主动说的小事） */
     var notes = [];
-    if (school) notes.push('早自习 ' + hm(p.wakeBase + ri(r, 0, 15)) + ' 到教室了，手机在兜里');
-    if (school && r() < 0.5) notes.push('大课间跑操，' + (lateNight ? '腿还是软的' : '跑完还挺爽'));
-    if (r() < 0.45) notes.push(pick(r, ['月考卷子发下来了', '物理作业又堆了一摞', '化学方程式背到吐', '被老师抽上去讲题了']));
-    if (lateNight) notes.push(pick(r, ['又熬夜了，明早肯定起不来', '错题抄到手酸，睡了']));
+    var nWake = p.wakeBase + ri(r, 0, 15);
+    if (school) notes.push({ t: nWake, s: '早自习 ' + hm(nWake) + ' 到教室了，手机在兜里' });
+    if (school && r() < 0.5) notes.push({ t: 620, s: '大课间跑操，' + (lateNight ? '腿还是软的' : '跑完还挺爽') });
+    if (r() < 0.45) notes.push({ t: ri(r, 860, 1160), s: pick(r, ['月考卷子发下来了', '物理作业又堆了一摞', '化学方程式背到吐', '被老师抽上去讲题了']) });
+    if (lateNight) notes.push({ t: ri(r, 1330, 1410), s: pick(r, ['又熬夜了，明早肯定起不来', '错题抄到手酸，睡了']) });
+
+    /* === 按当前时刻截断：只生成到"现在"为止的数据 === */
+    var isToday = dayKey(date) === dayKey(new Date());
+    var nowM = nowMinute();
+    var asleep = false;
+    var today = isToday;
+    if (isToday) {
+      if (nowM < wake) {
+        asleep = true;
+        steps = 0;
+        series = [];
+        spend = [];
+        notes = [];
+        rest = rest - 6;                       /* 睡着时是睡眠心率 */
+      } else {
+        steps = Math.round(steps * stepFrac(nowM, wake));
+        var endH = Math.floor(nowM / 60);
+        series = series.filter(function (pt) { return pt.h <= endH; });
+        spend = spend.filter(function (x) { return hhmmToMin(x.t) <= nowM; });
+        notes = notes.filter(function (n) { return n.t <= nowM; });
+      }
+    }
 
     return {
-      school: school, steps: Math.max(300, steps), rest: rest, series: series,
+      asleep: asleep, today: today,
+      school: school, steps: Math.max(asleep ? 0 : 400, steps), rest: rest, series: series,
       sleep: {
         bed: bed % 1440, wake: wake % 1440, total: totalMin,
         deep: deep, light: light, awake: awake, segs: segs, score: score,
@@ -213,6 +254,7 @@
     '.xxj-lf-hr span{flex:1;background:linear-gradient(180deg,#8fc0ea,#4a6f96);border-radius:3px;min-height:6px;}',
     '.xxj-lf-hr span.peak{background:linear-gradient(180deg,#f0b57c,#c98a4d);}',
     '.xxj-lf-hr span.low{background:rgba(143,192,234,.55);}',
+    '.xxj-lf-hr span.void{background:rgba(255,255,255,.055);min-height:3px;border-radius:2px;}',
     '.xxj-lf-hr-kv{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:9px;}',
     '.xxj-lf-hr-kv div{display:flex;align-items:center;gap:5px;font-size:10px;}',
     '.xxj-lf-hr-kv i{width:6px;height:6px;border-radius:2px;flex:none;}',
@@ -285,7 +327,13 @@
 
     var hrBars = '';
     var hrVals = [];
-    for (var h = 6; h <= 23; h++) {
+    var nowH = Math.floor(nowMinute() / 60);
+    var endHour = d.today ? Math.max(6, Math.min(23, nowH)) : 23;
+    if (d.series.length) {
+      var lastPt = d.series.reduce(function (a, b) { return a.h > b.h ? a : b; });
+      endHour = Math.max(endHour, lastPt.h);
+    }
+    for (var h = 6; d.series.length && h <= endHour; h++) {
       var v = d.rest + 6;
       d.series.forEach(function (pt) { if (pt.h === h) v = pt.v; });
       var hasPt = false;
@@ -298,12 +346,17 @@
       if (x.v > hrVals[hMax].v) hMax = i;
       if (x.v < hrVals[hMin].v) hMin = i;
     });
-    var scale = hrVals[hMax].v + 6;
+    var scale = hrVals.length ? hrVals[hMax].v + 6 : 1;
     hrVals.forEach(function (x, i) {
       var cls = i === hMax ? ' class="peak"' : (i === hMin ? ' class="low"' : '');
       hrBars += '<span' + cls + ' style="height:' + Math.max(8, Math.round(x.v / scale * 64)) + 'px"'
         + ' title="' + x.h + ':00 · ' + x.v + '"></span>';
     });
+    if (d.today) {
+      for (var hz = endHour + 1; hz <= 23; hz++) hrBars += '<span class="void"></span>';
+    }
+
+    var hrAxis = '<span>06</span><span>12</span><span>18</span><span>23</span>';
 
     return '<div class="xxj-lf-card">'
       + '<p class="xxj-lf-lab">今天 · ' + personName(p) + '<em>' + esc(p.device) + ' · ' + st + '</em></p>'
@@ -311,11 +364,15 @@
       + '<div class="xxj-lf-bar"><i style="width:' + pct + '%"></i></div>'
       + '<div class="xxj-lf-kv">'
       + '<div><b>' + d.rest + '</b><span>静息心率</span></div>'
-      + '<div><b>' + Math.floor(s.total / 60) + 'h' + (s.total % 60) + '</b><span>昨晚睡眠</span></div>'
+      + '<div><b>' + (d.asleep ? '—' : Math.floor(s.total / 60) + 'h' + (s.total % 60)) + '</b><span>' + (d.asleep ? '正在睡' : '昨晚睡眠') + '</span></div>'
       + '<div><b>' + totalSpend + '</b><span>今日消费 / 元</span></div>'
       + '</div></div>'
-      + '<div class="xxj-lf-card"><p class="xxj-lf-lab">睡眠<em>' + hm(s.bed) + ' → ' + hm(s.wake) + '</em></p>'
-      + '<div class="xxj-lf-sleep-bar">'
+      + (d.asleep
+        ? '<div class="xxj-lf-card"><p class="xxj-lf-lab">睡眠<em>正在睡</em></p>'
+          + '<div class="xxj-lf-sleep-line"><span>' + hm(s.bed) + ' 入睡，已睡 ' + Math.floor(((nowMinute() + 1440 - s.bed) % 1440) / 60) + 'h' + (((nowMinute() + 1440 - s.bed) % 1440) % 60) + ' 分</span></div>'
+          + '<div class="xxj-lf-kv" style="grid-template-columns:repeat(2,1fr)"><div><b>—</b><span>深睡 / 浅睡</span></div><div><b>未醒</b><span>睡眠评分</span></div></div></div>'
+        : '<div class="xxj-lf-card"><p class="xxj-lf-lab">睡眠<em>' + hm(s.bed) + ' → ' + hm(s.wake) + '</em></p>'
+          + '<div class="xxj-lf-sleep-bar">'
       + '<i class="deep" style="width:' + Math.round(s.deep / s.total * 100) + '%"></i>'
       + '<i class="light" style="width:' + Math.round(s.light / s.total * 100) + '%"></i>'
       + '<i class="awake" style="width:' + Math.round(s.awake / s.total * 100) + '%"></i>'
@@ -323,24 +380,29 @@
       + '<div class="xxj-lf-sleep-line"><span>深睡 ' + s.deep + ' 分</span><span>浅睡 ' + s.light + ' 分</span>'
       + '<span>清醒 ' + s.awake + ' 分</span></div>'
       + '<div class="xxj-lf-kv" style="grid-template-columns:repeat(2,1fr)">'
-      + '<div><b>' + s.score + '</b><span>睡眠评分</span></div>'
-      + '<div><b>' + (s.late ? '熬夜' : '正常') + (s.lazy ? ' · 赖床' : '') + '</b><span>昨晚状态</span></div>'
-      + '</div></div>'
-      + '<div class="xxj-lf-card"><p class="xxj-lf-lab">心率<em>最高 ' + hrVals[hMax].v + ' · 最低 ' + hrVals[hMin].v + '</em></p>'
-      + '<div class="xxj-lf-hr">' + hrBars + '</div>'
-      + '<div class="xxj-lf-hr-x"><span>06</span><span>12</span><span>18</span><span>23</span></div>'
-      + '<div class="xxj-lf-hr-kv">'
-      + '<div><i class="peak"></i><b>' + hrVals[hMax].v + '</b><span>' + pad(hrVals[hMax].h) + ':00 最高 · ' + (hrVals[hMax].v > d.rest + 40 ? '跑操' : '活动') + '</span></div>'
-      + '<div><i class="low"></i><b>' + hrVals[hMin].v + '</b><span>' + pad(hrVals[hMin].h) + ':00 最低 · ' + (hrVals[hMin].v <= d.rest + 8 ? '静息' : '课间') + '</span></div>'
-      + '</div></div>'
-      + '<div class="xxj-lf-card"><p class="xxj-lf-lab">消费<em>' + d.spend.length + ' 笔</em></p>'
-      + '<div class="xxj-lf-sp">' + d.spend.map(function (x) {
-        return '<div class="xxj-lf-sp-row"><em>' + esc(x.t) + '</em><span class="tag">' + esc(x.place) + '</span>'
-          + '<span>' + esc(x.item) + '</span><b>' + x.amount + '</b></div>';
-      }).join('') + '</div>'
-      + '<div class="xxj-lf-total"><span>合计</span><b>' + totalSpend + ' 元</b></div></div>'
+          + '<div><b>' + s.score + '</b><span>睡眠评分</span></div>'
+          + '<div><b>' + (s.late ? '熬夜' : '正常') + (s.lazy ? ' · 赖床' : '') + '</b><span>昨晚状态</span></div>'
+          + '</div></div>')
+      + (hrVals.length
+        ? '<div class="xxj-lf-card"><p class="xxj-lf-lab">心率<em>最高 ' + hrVals[hMax].v + ' · 最低 ' + hrVals[hMin].v + '</em></p>'
+          + '<div class="xxj-lf-hr">' + hrBars + '</div>'
+          + '<div class="xxj-lf-hr-x">' + hrAxis + '</div>'
+          + '<div class="xxj-lf-hr-kv">'
+          + '<div><i class="peak"></i><b>' + hrVals[hMax].v + '</b><span>' + pad(hrVals[hMax].h) + ':00 最高 · ' + (hrVals[hMax].v > d.rest + 40 ? '跑操' : '活动') + '</span></div>'
+          + '<div><i class="low"></i><b>' + hrVals[hMin].v + '</b><span>' + pad(hrVals[hMin].h) + ':00 最低 · ' + (hrVals[hMin].v <= d.rest + 8 ? '静息' : '课间') + '</span></div>'
+          + '</div></div>'
+        : '')
+      + (d.spend.length
+        ? '<div class="xxj-lf-card"><p class="xxj-lf-lab">消费<em>' + d.spend.length + ' 笔</em></p>'
+          + '<div class="xxj-lf-sp">' + d.spend.map(function (x) {
+            return '<div class="xxj-lf-sp-row"><em>' + esc(x.t) + '</em><span class="tag">' + esc(x.place) + '</span>'
+              + '<span>' + esc(x.item) + '</span><b>' + x.amount + '</b></div>';
+          }).join('') + '</div>'
+          + '<div class="xxj-lf-total"><span>合计</span><b>' + totalSpend + ' 元</b></div></div>'
+        : '<div class="xxj-lf-card"><p class="xxj-lf-lab">消费<em>还没花钱</em></p>'
+          + '<p class="xxj-lf-note">今天还没有消费记录，早餐可能是从家里带的。</p></div>')
       + (d.notes.length ? '<div class="xxj-lf-card"><p class="xxj-lf-lab">近况<em>他说的</em></p>'
-        + '<p class="xxj-lf-note">' + d.notes.map(esc).join('<br>') + '</p></div>' : '');
+        + '<p class="xxj-lf-note">' + d.notes.map(function (n) { return esc(n.s); }).join('<br>') + '</p></div>' : '');
   }
 
   function meCards(m) {
