@@ -120,6 +120,69 @@
   <link rel="stylesheet" href="roam.css?v=31">
   <link rel="stylesheet" href="forum.css?v=43">
   <link rel="stylesheet" href="relation.css?v=18">
+
+<style id="xxj-app-icon-grid">
+/* 主屏 App 图标网格（4 列，iOS 风格圆角图标） */
+#app-grid.app-tower{
+  display:grid !important;
+  grid-template-columns:repeat(4, minmax(0,1fr)) !important;
+  gap:8px 2px !important;
+  padding:14px 8px !important;
+  background:rgba(255,255,255,.42) !important;
+  border:1px solid rgba(255,255,255,.55) !important;
+  border-radius:24px !important;
+  box-shadow:0 10px 26px rgba(120,150,180,.12) !important;
+  backdrop-filter:blur(14px) saturate(1.2);
+  -webkit-backdrop-filter:blur(14px) saturate(1.2);
+  grid-auto-rows:auto !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+#app-grid .app-tile{
+  all:unset;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:6px !important;
+  padding:4px 2px 2px !important;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  width:auto !important;
+  box-sizing:border-box;
+}
+#app-grid .app-tile:active{ transform:scale(.93); transition:transform .12s ease; }
+#app-grid .app-tile-ico{
+  width:52px; height:52px;
+  border-radius:15px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; line-height:1;
+  color:#3a5c89;
+  background:linear-gradient(160deg, rgba(255,255,255,.92) 0%, rgba(198,219,240,.55) 100%);
+  border:1px solid rgba(255,255,255,.78);
+  box-shadow:0 6px 16px rgba(80,120,160,.16), inset 0 1px 0 rgba(255,255,255,.9);
+}
+#app-grid .app-tile-name{
+  font-size:11px; line-height:1.2; color:#2f4a63;
+  text-align:center; max-width:100%;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+body.dark #app-grid.app-tower{
+  background:rgba(30,34,42,.55) !important;
+  border-color:rgba(255,255,255,.12) !important;
+}
+body.dark #app-grid .app-tile-ico{
+  color:#dfe9f5;
+  background:linear-gradient(160deg, rgba(78,90,108,.92) 0%, rgba(40,48,60,.72) 100%);
+  border-color:rgba(255,255,255,.18);
+  box-shadow:0 6px 16px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.12);
+}
+body.dark #app-grid .app-tile-name{ color:#dfe9f5; }
+@media (max-width:360px){
+  #app-grid .app-tile-ico{ width:46px; height:46px; font-size:21px; }
+  #app-grid .app-tile-name{ font-size:10px; }
+}
+</style>
 </head>
 <body>
   <div class="boot-splash" id="boot-splash" aria-live="polite" aria-busy="true" aria-label="小心机 · 开屏画面，请稍后点击进入">
@@ -404,37 +467,18 @@
 
         <section class="after-polaroid">
           <aside class="app-tower" id="app-grid">
-            <button class="app-nora app-nora-main" data-app="聊天">
-              <span class="app-nora-k">Nora Card</span>
-              <strong>聊天</strong>
-              <small>会话列表</small>
-              <i class="ph ph-chat-circle-text"></i>
-            </button>
-
-            <div class="app-nora-row">
-              <button class="app-nora" data-app="查岗">
-                <span class="app-nora-k">Audit</span>
-                <strong>查岗</strong>
-                <i class="ph ph-device-mobile-camera"></i>
-              </button>
-              <button class="app-nora" data-app="关系">
-                <span class="app-nora-k">Bond</span>
-                <strong>关系</strong>
-                <i class="ph ph-heart-straight"></i>
-              </button>
-            </div>
-
-            <div class="app-nora-row app-nora-row-utility">
-              <button class="app-nora app-nora-mini" data-app="人设">
-                <i class="ph ph-identification-card"></i><strong>人设</strong>
-              </button>
-              <button class="app-nora app-nora-mini" data-app="漫游">
-                <i class="ph ph-footprints"></i><strong>漫游</strong>
-              </button>
-              <button class="app-nora app-nora-mini" data-app="我的">
-                <i class="ph ph-user-circle"></i><strong>我的</strong>
-              </button>
-            </div>
+            <button class="app-tile" data-app="聊天" type="button"><span class="app-tile-ico"><i class="ph ph-chat-circle-text"></i></span><span class="app-tile-name">聊天</span></button>
+            <button class="app-tile" data-app="查岗" type="button"><span class="app-tile-ico"><i class="ph ph-device-mobile-camera"></i></span><span class="app-tile-name">查岗</span></button>
+            <button class="app-tile" data-app="关系" type="button"><span class="app-tile-ico"><i class="ph ph-heart-straight"></i></span><span class="app-tile-name">关系</span></button>
+            <button class="app-tile" data-app="人设" type="button"><span class="app-tile-ico"><i class="ph ph-identification-card"></i></span><span class="app-tile-name">人设</span></button>
+            <button class="app-tile" data-app="漫游" type="button"><span class="app-tile-ico"><i class="ph ph-footprints"></i></span><span class="app-tile-name">漫游</span></button>
+            <button class="app-tile" data-app="世界书" type="button"><span class="app-tile-ico"><i class="ph ph-book-open-text"></i></span><span class="app-tile-name">世界书</span></button>
+            <button class="app-tile" data-app="论坛" type="button"><span class="app-tile-ico"><i class="ph ph-chats-circle"></i></span><span class="app-tile-name">论坛</span></button>
+            <button class="app-tile" data-app="表情包" type="button"><span class="app-tile-ico"><i class="ph ph-smiley"></i></span><span class="app-tile-name">表情包</span></button>
+            <button class="app-tile" data-app="我的" type="button"><span class="app-tile-ico"><i class="ph ph-user-circle"></i></span><span class="app-tile-name">我的</span></button>
+            <button class="app-tile" data-app="装扮" type="button"><span class="app-tile-ico"><i class="ph ph-paint-brush"></i></span><span class="app-tile-name">装扮</span></button>
+            <button class="app-tile" data-app="设置" type="button"><span class="app-tile-ico"><i class="ph ph-gear-six"></i></span><span class="app-tile-name">设置</span></button>
+            <button class="app-tile" data-app="备份" type="button"><span class="app-tile-ico"><i class="ph ph-archive-box"></i></span><span class="app-tile-name">备份</span></button>
           </aside>
         </section>
       </section>
@@ -8575,5 +8619,45 @@
 
   <!-- app.js / ai-api 由 db.js 在 #phone 就绪后注入；图标字体需尽早加载 -->
   <script src="https://cdn.jsdelivr.net/npm/@phosphor-icons/web"></script>
+
+<script>
+/* 主屏图标网格：给「世界书 / 论坛 / 装扮 / 备份 / 表情包」这类原本不在 #app-grid 里的功能补上入口 */
+(function () {
+  var MAP = {
+    "世界书": function () { openWorldBookScreen(); },
+    "论坛": function () {
+      if (typeof openForumScreen === "function") openForumScreen();
+      else if (typeof window.__xxjScheduleMainApp === "function") {
+        window.__xxjPendingAppAction = function () { openForumScreen && openForumScreen(); };
+        window.__xxjScheduleMainApp();
+      } else toast("论坛模块未加载");
+    },
+    "装扮": function () { openWardrobeScreen(); },
+    "备份": function () { openBackupZipModal(); },
+    "表情包": function () { openStickerScreen("manage"); }
+  };
+  function toast(t) { try { if (typeof showToast === "function") return showToast(t); } catch (e) {} }
+  function bind() {
+    var grid = document.getElementById("app-grid");
+    if (!grid || grid.dataset.xxjTileExtra === "1") return;
+    grid.dataset.xxjTileExtra = "1";
+    document.addEventListener("click", function (e) {
+      var t = e.target && e.target.closest ? e.target.closest("#app-grid [data-app]") : null;
+      if (!t) return;
+      var fn = MAP[t.dataset.app];
+      if (!fn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      try { fn(); } catch (err) { toast(t.dataset.app + " · 打开失败"); }
+    }, true);
+  }
+  var n = 0;
+  var iv = setInterval(function () {
+    n++;
+    if (document.getElementById("app-grid") && typeof openChatListScreen === "function") { bind(); clearInterval(iv); }
+    if (n > 200) clearInterval(iv);
+  }, 300);
+})();
+</script>
 </body>
 </html>
