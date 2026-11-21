@@ -135,7 +135,7 @@
   }
 
   /* ---------- 返回 ---------- */
-  function goBack() {
+  function goBack(viaPop) {
     /* 1) 试卷/详情弹层 */
     var ov = planOverlay();
     if (ov) {
@@ -183,8 +183,8 @@
       } catch (e) {}
     }
 
-    /* 5) 兜底：交给浏览器历史 */
-    if (window.history && history.length > 1) { history.back(); return 'history'; }
+    /* 5) 兜底：交给浏览器历史（由 popstate 触发时不再递归调用） */
+    if (!viaPop && window.history && history.length > 1) { history.back(); return 'history'; }
     return null;
   }
 
@@ -242,9 +242,39 @@
     armed = false;
   }
 
+  /* ---------- 关键：抢回浏览器的"边缘返回手势" ---------- */
+  function killOverscroll() {
+    if (document.getElementById('xxj-back-css')) return;
+    var st = document.createElement('style');
+    st.id = 'xxj-back-css';
+    /* 这两条是让 Chrome 不再把左右边缘滑动当成"浏览器后退" */
+    st.textContent = 'html,body{overscroll-behavior-x:none!important;overscroll-behavior-y:auto;'
+      + '-webkit-overflow-scrolling:touch;}';
+    document.head.appendChild(st);
+  }
+
+  /* 历史里垫一个"挡板"，系统返回先吃掉这一层，不会直接退出页面 */
+  var guard = 0;
+  function armGuard() {
+    if (guard) return;
+    try {
+      history.pushState({ xxjBackGuard: 1 }, '', location.href);
+      guard = 1;
+    } catch (e) {}
+  }
+
+  function onPop() {
+    var r = goBack(true);
+    if (r) { guard = 0; armGuard(); }      /* 还有界面 → 补一层，继续留在页面里 */
+    else { guard = 0; }                    /* 已经在桌面 → 放行走人 */
+  }
+
   function bind() {
     if (document.__xxjBackSwipe) return;
     document.__xxjBackSwipe = true;
+    killOverscroll();
+    armGuard();
+    window.addEventListener('popstate', onPop);
     document.addEventListener('touchstart', onStart, { passive: true, capture: true });
     document.addEventListener('touchmove', onMove, { passive: false, capture: true });
     document.addEventListener('touchend', onEnd, { passive: true, capture: true });
