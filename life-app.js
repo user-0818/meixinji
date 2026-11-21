@@ -1,7 +1,7 @@
 /* 生活 App（meixinji / 没心机）— 独立补丁，不改 app-grid.js
  *  内容：
  *   1. 主屏「漫游」那格换成「生活」，漫游自动挪到第 2 页末尾
- *   2. 两位角色（物化生＝小米手环 / 物化地＝Apple Watch）的手表数据：步数、心率、睡眠（含深/浅/清醒）、消费、近况
+ *   2. 两位角色（角色 A＝小米手环 / 角色 B＝Apple Watch，名字导入人设后再填）的手表数据：步数、心率、睡眠（含深/浅/清醒）、消费、近况
  *      —— 纯本地模拟，按日期 + 人物固定种子生成，同一天刷新不变；睡眠/起床时间随机浮动（会熬夜、会赖床）
  *   3. 「我」页：手动录入 / 粘贴导入自己的手环数据（华为系浏览器端读不到，见页面说明）
  *   4. 把两人的今天 + 我的今天注入对话上下文，角色能看到你一天的状态
@@ -38,11 +38,11 @@
   /* ===== 两位角色设定（山东高中、走读、物化生 / 物化地）===== */
   var PEOPLE = [
     {
-      k: 'wsh', name: '', tag: '物化生', device: '小米手环 8', tint: '#e2a86f',
+      k: 'wsh', name: '', tag: '角色 A', device: '小米手环 8', tint: '#e2a86f',
       wakeBase: 365, bedBase: 1395, sleepDeep: 0.22, stepsBase: 7600, hrRest: 58
     },
     {
-      k: 'whd', name: '', tag: '物化地', device: 'Apple Watch S8', tint: '#7fb2e5',
+      k: 'whd', name: '', tag: '角色 B', device: 'Apple Watch S8', tint: '#7fb2e5',
       wakeBase: 372, bedBase: 1410, sleepDeep: 0.19, stepsBase: 6200, hrRest: 66
     }
   ];
@@ -283,7 +283,7 @@
     }
 
     return '<div class="xxj-lf-card">'
-      + '<p class="xxj-lf-lab">今天 · ' + personName(p) + '<em>' + p.tag + ' · ' + esc(p.device) + ' · ' + st + '</em></p>'
+      + '<p class="xxj-lf-lab">今天 · ' + personName(p) + '<em>' + esc(p.device) + ' · ' + st + '</em></p>'
       + '<div class="xxj-lf-hero"><b class="xxj-lf-dps">' + d.steps + '</b><span class="xxj-lf-unit">步 / 目标 8000</span></div>'
       + '<div class="xxj-lf-bar"><i style="width:' + pct + '%"></i></div>'
       + '<div class="xxj-lf-kv">'
@@ -352,8 +352,8 @@
       + '<button class="xxj-lf-btn" data-me-save>保存</button>'
       + '<button class="xxj-lf-btn" data-me-clear>清空</button></div>'
       + '<div class="xxj-lf-form" style="margin-top:10px">'
-      + '<label><span>角色 A</span><input class="xxj-lf-input" data-me-name="wsh" value="' + esc(names.wsh || '') + '" placeholder="物化生那位（小米手环）"></label>'
-      + '<label><span>角色 B</span><input class="xxj-lf-input" data-me-name="whd" value="' + esc(names.whd || '') + '" placeholder="物化地那位（Apple Watch）"></label>'
+      + '<label><span>角色 A</span><input class="xxj-lf-input" data-me-name="wsh" value="' + esc(names.wsh || '') + '" placeholder="填角色 A 的名字（小米手环）"></label>'
+      + '<label><span>角色 B</span><input class="xxj-lf-input" data-me-name="whd" value="' + esc(names.whd || '') + '" placeholder="填角色 B 的名字（Apple Watch）"></label>'
       + '</div>'
       + '<p class="xxj-lf-tip">角色名字导入人设后再填，只存在这台手机上。</p>'
       + '<p class="xxj-lf-tip">华为手环/手表用的是私有协议，不广播标准心率服务，网页端（Web Bluetooth）扫不到；'
