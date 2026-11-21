@@ -1,4 +1,4 @@
-/* 主屏 App 图标 v8（meixinji / 没心机）
+/* 主屏 App 图标 v9（meixinji / 没心机）
  *  ─ 底栏（主线 / 消息 / 角色库 / 我的）完全不动
  *  ─ 主屏网格去掉与底栏重复的「我的」（聊天、人设保留）
  *  ─ 一页 8 个，放不下的自动到第二页；左右滑动 + 淡入淡出 + 页码点
@@ -6,7 +6,9 @@
  *  ─ v6 调整：不再主动调用浏览器全屏（去掉 Chrome 的全屏提示）
  *  ─ v7 调整：去掉顶部黑条（状态栏内边距压到最小）
  *  ─ v7 新增：顶部时间卡片改成 p2 风格的对话框，气泡文字可点击修改并记住
- *  ─ v8 调整：对话框字号改小；页面改为物理贴边（消除顶部黑条）；恢复全屏请求以隐去系统状态栏
+ *  ─ v8 调整：对话框字号改小；页面改为物理贴边（消除顶部黑条）
+ *  ─ v9 调整：整体下移一点；图标网格靠近底栏（填掉底栏上方空档）
+ *  ─ v9 调整：已装成 App 时不再主动请求全屏（不弹系统提示）
  *
  *  用法：仓库根目录放本文件；index.html 的 <head> 里加一行
  *         <script src="app-grid.js"></script>
@@ -39,7 +41,9 @@
     'height:100% !important;max-height:none !important;border-radius:0 !important;box-shadow:none !important;margin:0 !important;}',
     '.ambience,.ambience .wallpaper{inset:0 !important;background-size:cover !important;background-position:center top !important;}',
     /* 状态栏内边距压到最小，不再为系统状态栏预留 */
-    '.statusbar{padding:6px 16px 2px !important;}',
+    '.statusbar{padding:14px 16px 2px !important;}',
+    '.layout-shell{margin-top:12px !important;padding-bottom:10px !important;}',
+    '.after-polaroid{margin-top:auto !important;}',
     ':fullscreen .phone,.phone:fullscreen{height:100vh !important;max-height:100vh !important;}',
 
     /* ===== 时间卡片 → 对话框（p2 风格，字号收敛） ===== */
@@ -122,9 +126,9 @@
   }
 
   function injectCss() {
-    if (document.getElementById('xxj-app-icon-grid-v8')) return;
+    if (document.getElementById('xxj-app-icon-grid-v9')) return;
     var s = document.createElement('style');
-    s.id = 'xxj-app-icon-grid-v8';
+    s.id = 'xxj-app-icon-grid-v9';
     s.textContent = CSS;
     document.head.appendChild(s);
   }
@@ -178,8 +182,8 @@
   }
 
   function bindSwipe(grid) {
-    if (grid.dataset.xxjSwipeV8 === '1') return;
-    grid.dataset.xxjSwipeV8 = '1';
+    if (grid.dataset.xxjSwipeV9 === '1') return;
+    grid.dataset.xxjSwipeV9 = '1';
     var x0 = 0, y0 = 0, t0 = 0, tracking = false;
     grid.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 1) return;
@@ -216,8 +220,8 @@
 
   function buildGrid() {
     var grid = document.getElementById('app-grid');
-    if (!grid || grid.dataset.xxjTileGrid === 'v8') return;
-    grid.dataset.xxjTileGrid = 'v8';
+    if (!grid || grid.dataset.xxjTileGrid === 'v9') return;
+    grid.dataset.xxjTileGrid = 'v9';
 
     var pageCount = Math.ceil(APPS.length / PER_PAGE);
     var pagesHtml = '';
@@ -247,8 +251,8 @@
   };
 
   function bindClicks() {
-    if (document.__xxjTileClickV8) return;
-    document.__xxjTileClickV8 = true;
+    if (document.__xxjTileClickV9) return;
+    document.__xxjTileClickV9 = true;
     document.addEventListener('click', function (e) {
       var t = e.target && e.target.closest ? e.target.closest('#app-grid [data-app]') : null;
       if (!t) return;
@@ -283,11 +287,15 @@
   }
 
   function armFullscreen() {
-    if (document.__xxjFsV8) return;
-    document.__xxjFsV8 = true;
+    if (document.__xxjFsV9) return;
+    document.__xxjFsV9 = true;
+    /* 已经装成 App（standalone / fullscreen 显示模式）就别再请求，避免弹系统提示 */
+    if (inAppDisplay()) return;
+    try { if (sessionStorage.getItem('xxjFsV9') === '1') return; } catch (e) {}
     var first = function () {
       window.removeEventListener('touchend', first, true);
       window.removeEventListener('click', first, true);
+      try { sessionStorage.setItem('xxjFsV9', '1'); } catch (e) {}
       requestFs();
     };
     window.addEventListener('touchend', first, true);
@@ -295,14 +303,14 @@
   }
 
   /* ===== 顶部时间卡片 → 对话框（p2 风格，文字可改） ===== */
-  var LS_R = 'xxjChatRightV8';
+  var LS_R = 'xxjChatRightV9';
 
   function buildChat() {
     var card = document.getElementById('desktop-hero-card');
     var note = document.getElementById('hero-note');
     if (!card || !note) return;
-    if (card.dataset.xxjChat === 'v8') return;
-    card.dataset.xxjChat = 'v8';
+    if (card.dataset.xxjChat === 'v9') return;
+    card.dataset.xxjChat = 'v9';
 
     var right = card.querySelector('.xxj-bub-r');
     if (!right) {
