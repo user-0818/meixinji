@@ -1,10 +1,11 @@
-/* 主屏 App 图标 v6（meixinji / 没心机）
+/* 主屏 App 图标 v7（meixinji / 没心机）
  *  ─ 底栏（主线 / 消息 / 角色库 / 我的）完全不动
  *  ─ 主屏网格去掉与底栏重复的「我的」（聊天、人设保留）
  *  ─ 一页 8 个，放不下的自动到第二页；左右滑动 + 淡入淡出 + 页码点
  *  ─ v6 修复：翻页后图标不再偏移（复位方向位移），滑动判据更稳
- *  ─ v6 调整：不再主动调用浏览器全屏（去掉 Chrome 的全屏提示），
- *            全屏交给 manifest 的 fullscreen 显示模式（从桌面图标打开时不显示系统状态栏）
+ *  ─ v6 调整：不再主动调用浏览器全屏（去掉 Chrome 的全屏提示）
+ *  ─ v7 调整：去掉顶部黑条（状态栏内边距压到最小）
+ *  ─ v7 新增：顶部时间卡片改成 p2 风格的对话框，气泡文字可点击修改并记住
  *
  *  用法：仓库根目录放本文件；index.html 的 <head> 里加一行
  *         <script src="app-grid.js"></script>
@@ -28,13 +29,35 @@
   var DUR = 280;       /* 过渡时长 ms */
 
   var CSS = [
-    /* ===== 铺满整屏：去掉左右黑边 / 上下留白 ===== */
+    /* ===== 铺满整屏：去掉左右黑边 / 上下留白 / 顶部黑条 ===== */
     '.stage{min-height:100dvh !important;padding:0 !important;display:block !important;place-items:stretch !important;}',
     '.phone{width:100% !important;max-width:none !important;height:100dvh !important;max-height:100dvh !important;',
     'border-radius:0 !important;box-shadow:none !important;margin:0 !important;}',
-    'html,body{overflow:hidden !important;-webkit-text-size-adjust:100% !important;}',
+    'html,body{overflow:hidden !important;-webkit-text-size-adjust:100% !important;background:transparent !important;}',
+    /* 顶部不再为系统状态栏留出黑条：状态栏内边距压到最小 */
+    '.statusbar{padding-top:8px !important;padding-left:16px !important;padding-right:16px !important;padding-bottom:2px !important;}',
     ':fullscreen .phone,.phone:fullscreen{height:100vh !important;max-height:100vh !important;}',
-    ':fullscreen .statusbar{padding-top:calc(16px + env(safe-area-inset-top,0px)) !important;}',
+
+    /* ===== 时间卡片 → 对话框（p2 风格） ===== */
+    '#desktop-hero-card{display:flex !important;flex-direction:column !important;gap:10px !important;',
+    'padding:16px 14px 12px !important;}',
+    '#desktop-hero-card .hero-meta,#desktop-hero-card .hero-kicker,#hero-time{display:none !important;}',
+    '#desktop-hero-card #hero-note{align-self:flex-start !important;max-width:80% !important;margin:0 !important;',
+    'padding:12px 16px !important;border-radius:20px !important;border-bottom-left-radius:8px !important;',
+    'background:#f3f5f9 !important;color:#20242c !important;font-size:15px !important;line-height:1.55 !important;',
+    'font-family:inherit !important;letter-spacing:0 !important;text-transform:none !important;',
+    'box-shadow:0 8px 20px rgba(0,0,0,.18) !important;white-space:pre-wrap !important;word-break:break-word !important;',
+    'outline:none !important;min-height:22px !important;}',
+    '#desktop-hero-card .xxj-bub-r{align-self:flex-end !important;max-width:62% !important;',
+    'padding:10px 15px !important;border-radius:18px !important;border-bottom-right-radius:8px !important;',
+    'background:#ffffff !important;color:#20242c !important;font-size:14px !important;line-height:1.4 !important;',
+    'box-shadow:0 8px 20px rgba(0,0,0,.16) !important;white-space:pre-wrap !important;word-break:break-word !important;',
+    'outline:none !important;min-height:20px !important;}',
+    '#desktop-hero-card #hero-note:focus,#desktop-hero-card .xxj-bub-r:focus{',
+    'box-shadow:0 0 0 2px rgba(91,127,166,.6),0 8px 20px rgba(0,0,0,.2) !important;}',
+    '#desktop-hero-card .xxj-chat-tip{align-self:flex-start !important;font-size:10px !important;',
+    'letter-spacing:.08em !important;opacity:.45 !important;text-transform:uppercase !important;margin:0 !important;}',
+    '#desktop-hero-card .hero-actions{align-self:flex-end !important;margin:0 !important;}',
 
     /* ===== 网格容器：分页舞台 ===== */
     '#app-grid.app-tower{display:block !important;position:relative !important;overflow:hidden !important;',
@@ -87,9 +110,9 @@
   ].join('');
 
   function injectCss() {
-    if (document.getElementById('xxj-app-icon-grid-v6')) return;
+    if (document.getElementById('xxj-app-icon-grid-v7')) return;
     var s = document.createElement('style');
-    s.id = 'xxj-app-icon-grid-v6';
+    s.id = 'xxj-app-icon-grid-v7';
     s.textContent = CSS;
     document.head.appendChild(s);
   }
@@ -143,8 +166,8 @@
   }
 
   function bindSwipe(grid) {
-    if (grid.dataset.xxjSwipeV6 === '1') return;
-    grid.dataset.xxjSwipeV6 = '1';
+    if (grid.dataset.xxjSwipeV7 === '1') return;
+    grid.dataset.xxjSwipeV7 = '1';
     var x0 = 0, y0 = 0, t0 = 0, tracking = false;
     grid.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 1) return;
@@ -181,8 +204,8 @@
 
   function buildGrid() {
     var grid = document.getElementById('app-grid');
-    if (!grid || grid.dataset.xxjTileGrid === 'v6') return;
-    grid.dataset.xxjTileGrid = 'v6';
+    if (!grid || grid.dataset.xxjTileGrid === 'v7') return;
+    grid.dataset.xxjTileGrid = 'v7';
 
     var pageCount = Math.ceil(APPS.length / PER_PAGE);
     var pagesHtml = '';
@@ -212,8 +235,8 @@
   };
 
   function bindClicks() {
-    if (document.__xxjTileClickV6) return;
-    document.__xxjTileClickV6 = true;
+    if (document.__xxjTileClickV7) return;
+    document.__xxjTileClickV7 = true;
     document.addEventListener('click', function (e) {
       var t = e.target && e.target.closest ? e.target.closest('#app-grid [data-app]') : null;
       if (!t) return;
@@ -225,12 +248,61 @@
     }, true);
   }
 
+  /* ===== 顶部时间卡片 → 对话框（p2 风格，文字可改） ===== */
+  var LS_R = 'xxjChatRightV7';
+
+  function buildChat() {
+    var card = document.getElementById('desktop-hero-card');
+    var note = document.getElementById('hero-note');
+    if (!card || !note) return;
+    if (card.dataset.xxjChat === 'v7') return;
+    card.dataset.xxjChat = 'v7';
+
+    var right = card.querySelector('.xxj-bub-r');
+    if (!right) {
+      right = document.createElement('div');
+      right.className = 'xxj-bub-r';
+      right.setAttribute('contenteditable', 'true');
+      right.setAttribute('spellcheck', 'false');
+      var saved = '';
+      try { saved = localStorage.getItem(LS_R) || ''; } catch (e) {}
+      right.textContent = saved || '♡ 收到啦';
+      right.addEventListener('blur', function () {
+        var v = (right.textContent || '').trim();
+        if (!v) { v = '♡'; right.textContent = v; }
+        try { localStorage.setItem(LS_R, v); } catch (e) {}
+      });
+      right.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); right.blur(); }
+      });
+      if (note.parentNode === card) note.insertAdjacentElement('afterend', right);
+      else card.appendChild(right);
+    }
+
+    /* 点气泡时不触发外层手势 / 路由 */
+    [note, right].forEach(function (el) {
+      if (el.dataset.xxjNoBubble === '1') return;
+      el.dataset.xxjNoBubble = '1';
+      ['touchstart', 'mousedown', 'click'].forEach(function (ev) {
+        el.addEventListener(ev, function (e) { e.stopPropagation(); }, { passive: true });
+      });
+    });
+
+    if (!card.querySelector('.xxj-chat-tip')) {
+      var tip = document.createElement('p');
+      tip.className = 'xxj-chat-tip';
+      tip.textContent = 'Tap bubbles to edit';
+      card.appendChild(tip);
+    }
+  }
+
   var n = 0;
   var iv = setInterval(function () {
     n++;
     if (typeof openChatListScreen === 'function' && document.getElementById('app-grid')) {
       injectCss();
       buildGrid();
+      buildChat();
       bindClicks();
       clearInterval(iv);
     }
