@@ -1,10 +1,12 @@
-/* 主屏 App 图标 v5（meixinji / 没心机）
+/* 主屏 App 图标 v6（meixinji / 没心机）
  *  ─ 底栏（主线 / 消息 / 角色库 / 我的）完全不动
  *  ─ 主屏网格去掉与底栏重复的「我的」（聊天、人设保留）
- *  ─ 一页 8 个，放不下的自动到第二页；左右滑动切换，带横向位移 + 淡入淡出 + 页码点
- *  ─ 铺满整屏，并在用户首次触摸时请求全屏，隐藏手机自带系统状态栏（只留小手机状态栏）
+ *  ─ 一页 8 个，放不下的自动到第二页；左右滑动 + 淡入淡出 + 页码点
+ *  ─ v6 修复：翻页后图标不再偏移（复位方向位移），滑动判据更稳
+ *  ─ v6 调整：不再主动调用浏览器全屏（去掉 Chrome 的全屏提示），
+ *            全屏交给 manifest 的 fullscreen 显示模式（从桌面图标打开时不显示系统状态栏）
  *
- *  用法：仓库根目录放本文件；index.html 的 </body> 前加一行
+ *  用法：仓库根目录放本文件；index.html 的 <head> 里加一行
  *         <script src="app-grid.js"></script>
  */
 (function () {
@@ -22,9 +24,11 @@
     ["备份", "ph-archive-box"]
   ];
   var PER_PAGE = 8;
+  var SLIDE = 20;      /* 侧滑位移量 px */
+  var DUR = 280;       /* 过渡时长 ms */
 
   var CSS = [
-    /* ===== 全屏铺满：去掉左右黑边 / 上下留白 ===== */
+    /* ===== 铺满整屏：去掉左右黑边 / 上下留白 ===== */
     '.stage{min-height:100dvh !important;padding:0 !important;display:block !important;place-items:stretch !important;}',
     '.phone{width:100% !important;max-width:none !important;height:100dvh !important;max-height:100dvh !important;',
     'border-radius:0 !important;box-shadow:none !important;margin:0 !important;}',
@@ -39,15 +43,21 @@
     'box-shadow:0 10px 26px rgba(120,150,180,.12) !important;',
     'backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);',
     'height:auto !important;min-height:0 !important;}',
+
+    /* 分页层：所有页叠在同一格，非当前页透明且不接收点击 */
     '#app-grid .xxj-pager{display:grid;overflow:hidden;}',
     '#app-grid .xxj-pg{grid-area:1/1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 2px;',
-    'opacity:0;transform:translateX(24px);transition:opacity .3s ease,transform .3s cubic-bezier(.22,.61,.36,1);',
-    'pointer-events:none;}',
-    '#app-grid .xxj-pg.xxj-on{opacity:1;transform:none;pointer-events:auto;}',
-    '#app-grid .xxj-pg.xxj-from-left{transform:translateX(-24px);}',
+    'align-content:start;justify-items:center;width:100%;box-sizing:border-box;',
+    'opacity:0;transform:translateX(' + SLIDE + 'px);',
+    'transition:opacity ' + DUR + 'ms ease,transform ' + DUR + 'ms cubic-bezier(.22,.61,.36,1);',
+    'will-change:opacity,transform;pointer-events:none;}',
+    /* 从左侧进来时，先摆到左边，再入场 */
+    '#app-grid .xxj-pg.xxj-from-left:not(.xxj-on){opacity:0;transform:translateX(-' + SLIDE + 'px);}',
+    /* 当前页：必须最后一条，保证 wins，transform 一定归零 */
+    '#app-grid .xxj-pg.xxj-on{opacity:1 !important;transform:translateX(0) !important;pointer-events:auto;}',
 
     /* 页码点 */
-    '#app-grid .xxj-dots{display:flex;justify-content:center;gap:6px;margin-top:8px;}',
+    '#app-grid .xxj-dots{display:flex;justify-content:center;gap:6px;margin-top:10px;}',
     '#app-grid .xxj-dots span{width:6px;height:6px;border-radius:50%;background:rgba(120,150,180,.35);',
     'transition:background .2s,transform .2s;cursor:pointer;}',
     '#app-grid .xxj-dots span.on{background:#5b7fa6;transform:scale(1.3);}',
@@ -77,9 +87,9 @@
   ].join('');
 
   function injectCss() {
-    if (document.getElementById('xxj-app-icon-grid-v5')) return;
+    if (document.getElementById('xxj-app-icon-grid-v6')) return;
     var s = document.createElement('style');
-    s.id = 'xxj-app-icon-grid-v5';
+    s.id = 'xxj-app-icon-grid-v6';
     s.textContent = CSS;
     document.head.appendChild(s);
   }
@@ -94,35 +104,57 @@
       + '<span class="app-tile-name">' + a[0] + '</span></button>';
   }
 
-  var cur = 0;
+  /* 当前页索引，从 DOM 状态推导，避免与真实状态不一致 */
+  function activeIndex(pages) {
+    for (var i = 0; i < pages.length; i++) {
+      if (pages[i].classList.contains('xxj-on')) return i;
+    }
+    return -1;
+  }
 
-  function setPage(grid, i, dir) {
+  function setPage(grid, target, dir) {
     var pages = Array.prototype.slice.call(grid.querySelectorAll('.xxj-pg'));
     if (!pages.length) return;
-    if (i < 0) i = 0;
-    if (i > pages.length - 1) i = pages.length - 1;
-    if (i === cur && pages[cur] && pages[cur].classList.contains('xxj-on')) return;
-    cur = i;
+    if (target < 0) target = 0;
+    if (target > pages.length - 1) target = pages.length - 1;
+    if (target === activeIndex(pages)) return;
+
     pages.forEach(function (pg, idx) {
-      if (idx === i) {
-        pg.classList.toggle('xxj-from-left', dir === 'left');
+      if (idx === target) {
+        pg.classList.remove('xxj-from-left');
+        if (dir === 'left') pg.classList.add('xxj-from-left');
+        /* 先让浏览器记住"排到左边"这个起始位置，再入场，否则会跳 */
+        void pg.offsetWidth;
         pg.classList.add('xxj-on');
       } else {
         pg.classList.remove('xxj-on');
+        pg.classList.remove('xxj-from-left');
       }
     });
+
     grid.querySelectorAll('.xxj-dots span').forEach(function (d, idx) {
-      d.classList.toggle('on', idx === i);
+      d.classList.toggle('on', idx === target);
     });
+
+    /* 动画结束后清掉方向类，保证下一次从干净状态开始 */
+    setTimeout(function () {
+      pages.forEach(function (pg) { pg.classList.remove('xxj-from-left'); });
+    }, DUR + 60);
   }
 
   function bindSwipe(grid) {
-    if (grid.dataset.xxjSwipeV5 === '1') return;
-    grid.dataset.xxjSwipeV5 = '1';
-    var x0 = 0, y0 = 0, tracking = false;
+    if (grid.dataset.xxjSwipeV6 === '1') return;
+    grid.dataset.xxjSwipeV6 = '1';
+    var x0 = 0, y0 = 0, t0 = 0, tracking = false;
     grid.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 1) return;
-      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; tracking = true;
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+      t0 = Date.now(); tracking = true;
+    }, { passive: true });
+    grid.addEventListener('touchmove', function (e) {
+      if (!tracking || e.touches.length !== 1) return;
+      var dy = Math.abs(e.touches[0].clientY - y0);
+      if (dy > 30) tracking = false;    /* 垂直滚动优先，不当作翻页 */
     }, { passive: true });
     grid.addEventListener('touchend', function (e) {
       if (!tracking) return;
@@ -130,13 +162,18 @@
       var t = e.changedTouches && e.changedTouches[0];
       if (!t) return;
       var dx = t.clientX - x0, dy = t.clientY - y0;
-      if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return;
+      var dt = Date.now() - t0;
+      if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx) || dt > 600) return;
+      var cur = activeIndex(Array.prototype.slice.call(grid.querySelectorAll('.xxj-pg')));
+      if (cur < 0) cur = 0;
       setPage(grid, dx < 0 ? cur + 1 : cur - 1, dx < 0 ? 'right' : 'left');
     }, { passive: true });
     grid.addEventListener('click', function (e) {
       var d = e.target && e.target.closest ? e.target.closest('.xxj-dots span') : null;
       if (!d) return;
       e.preventDefault(); e.stopPropagation();
+      var pages = Array.prototype.slice.call(grid.querySelectorAll('.xxj-pg'));
+      var cur = activeIndex(pages); if (cur < 0) cur = 0;
       var target = parseInt(d.dataset.dot, 10) || 0;
       setPage(grid, target, target > cur ? 'right' : 'left');
     }, true);
@@ -144,8 +181,8 @@
 
   function buildGrid() {
     var grid = document.getElementById('app-grid');
-    if (!grid || grid.dataset.xxjTileGrid === 'v5') return;
-    grid.dataset.xxjTileGrid = 'v5';
+    if (!grid || grid.dataset.xxjTileGrid === 'v6') return;
+    grid.dataset.xxjTileGrid = 'v6';
 
     var pageCount = Math.ceil(APPS.length / PER_PAGE);
     var pagesHtml = '';
@@ -175,8 +212,8 @@
   };
 
   function bindClicks() {
-    if (document.__xxjTileClickV5) return;
-    document.__xxjTileClickV5 = true;
+    if (document.__xxjTileClickV6) return;
+    document.__xxjTileClickV6 = true;
     document.addEventListener('click', function (e) {
       var t = e.target && e.target.closest ? e.target.closest('#app-grid [data-app]') : null;
       if (!t) return;
@@ -188,30 +225,6 @@
     }, true);
   }
 
-  /* 全屏：隐藏浏览器栏与手机自带状态栏，只保留小手机内部状态栏 */
-  function tryFullscreen() {
-    try {
-      var el = document.documentElement;
-      if (document.fullscreenElement || document.webkitFullscreenElement) return;
-      var fn = el.requestFullscreen || el.webkitRequestFullscreen;
-      if (!fn) return;
-      var ret = fn.call(el, { navigationUI: 'hide' });
-      if (ret && ret.catch) ret.catch(function () {});
-    } catch (e) {}
-  }
-
-  function armFullscreen() {
-    if (document.__xxjFsV5) return;
-    document.__xxjFsV5 = true;
-    var once = function () {
-      window.removeEventListener('touchend', once, true);
-      window.removeEventListener('click', once, true);
-      tryFullscreen();
-    };
-    window.addEventListener('touchend', once, true);
-    window.addEventListener('click', once, true);
-  }
-
   var n = 0;
   var iv = setInterval(function () {
     n++;
@@ -219,7 +232,6 @@
       injectCss();
       buildGrid();
       bindClicks();
-      armFullscreen();
       clearInterval(iv);
     }
     if (n > 200) clearInterval(iv);
