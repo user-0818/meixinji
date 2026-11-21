@@ -1,4 +1,4 @@
-/* 主屏 App 图标 v7（meixinji / 没心机）
+/* 主屏 App 图标 v8（meixinji / 没心机）
  *  ─ 底栏（主线 / 消息 / 角色库 / 我的）完全不动
  *  ─ 主屏网格去掉与底栏重复的「我的」（聊天、人设保留）
  *  ─ 一页 8 个，放不下的自动到第二页；左右滑动 + 淡入淡出 + 页码点
@@ -6,6 +6,7 @@
  *  ─ v6 调整：不再主动调用浏览器全屏（去掉 Chrome 的全屏提示）
  *  ─ v7 调整：去掉顶部黑条（状态栏内边距压到最小）
  *  ─ v7 新增：顶部时间卡片改成 p2 风格的对话框，气泡文字可点击修改并记住
+ *  ─ v8 调整：对话框字号改小；页面改为物理贴边（消除顶部黑条）；恢复全屏请求以隐去系统状态栏
  *
  *  用法：仓库根目录放本文件；index.html 的 <head> 里加一行
  *         <script src="app-grid.js"></script>
@@ -29,34 +30,38 @@
   var DUR = 280;       /* 过渡时长 ms */
 
   var CSS = [
-    /* ===== 铺满整屏：去掉左右黑边 / 上下留白 / 顶部黑条 ===== */
-    '.stage{min-height:100dvh !important;padding:0 !important;display:block !important;place-items:stretch !important;}',
-    '.phone{width:100% !important;max-width:none !important;height:100dvh !important;max-height:100dvh !important;',
-    'border-radius:0 !important;box-shadow:none !important;margin:0 !important;}',
-    'html,body{overflow:hidden !important;-webkit-text-size-adjust:100% !important;background:transparent !important;}',
-    /* 顶部不再为系统状态栏留出黑条：状态栏内边距压到最小 */
-    '.statusbar{padding-top:8px !important;padding-left:16px !important;padding-right:16px !important;padding-bottom:2px !important;}',
+    /* ===== 铺满整屏：物理贴边，消灭顶部黑条 ===== */
+    'html,body{margin:0 !important;padding:0 !important;overflow:hidden !important;height:100% !important;',
+    'background:#0f1218 !important;-webkit-text-size-adjust:100% !important;}',
+    '.stage{position:fixed !important;inset:0 !important;padding:0 !important;margin:0 !important;',
+    'display:block !important;place-items:stretch !important;background:#0f1218 !important;}',
+    '.phone{position:absolute !important;inset:0 !important;width:100% !important;max-width:none !important;',
+    'height:100% !important;max-height:none !important;border-radius:0 !important;box-shadow:none !important;margin:0 !important;}',
+    '.ambience,.ambience .wallpaper{inset:0 !important;background-size:cover !important;background-position:center top !important;}',
+    /* 状态栏内边距压到最小，不再为系统状态栏预留 */
+    '.statusbar{padding:6px 16px 2px !important;}',
     ':fullscreen .phone,.phone:fullscreen{height:100vh !important;max-height:100vh !important;}',
 
-    /* ===== 时间卡片 → 对话框（p2 风格） ===== */
-    '#desktop-hero-card{display:flex !important;flex-direction:column !important;gap:10px !important;',
-    'padding:16px 14px 12px !important;}',
+    /* ===== 时间卡片 → 对话框（p2 风格，字号收敛） ===== */
+    '#desktop-hero-card{display:flex !important;flex-direction:column !important;gap:8px !important;',
+    'padding:14px 12px 10px !important;}',
     '#desktop-hero-card .hero-meta,#desktop-hero-card .hero-kicker,#hero-time{display:none !important;}',
-    '#desktop-hero-card #hero-note{align-self:flex-start !important;max-width:80% !important;margin:0 !important;',
-    'padding:12px 16px !important;border-radius:20px !important;border-bottom-left-radius:8px !important;',
-    'background:#f3f5f9 !important;color:#20242c !important;font-size:15px !important;line-height:1.55 !important;',
-    'font-family:inherit !important;letter-spacing:0 !important;text-transform:none !important;',
-    'box-shadow:0 8px 20px rgba(0,0,0,.18) !important;white-space:pre-wrap !important;word-break:break-word !important;',
-    'outline:none !important;min-height:22px !important;}',
-    '#desktop-hero-card .xxj-bub-r{align-self:flex-end !important;max-width:62% !important;',
-    'padding:10px 15px !important;border-radius:18px !important;border-bottom-right-radius:8px !important;',
-    'background:#ffffff !important;color:#20242c !important;font-size:14px !important;line-height:1.4 !important;',
-    'box-shadow:0 8px 20px rgba(0,0,0,.16) !important;white-space:pre-wrap !important;word-break:break-word !important;',
-    'outline:none !important;min-height:20px !important;}',
+    '#desktop-hero-card #hero-note{align-self:flex-start !important;max-width:78% !important;margin:0 !important;',
+    'padding:9px 13px !important;border-radius:16px !important;border-bottom-left-radius:6px !important;',
+    'background:#f3f5f9 !important;color:#20242c !important;font-size:12.5px !important;line-height:1.45 !important;',
+    'font-family:inherit !important;letter-spacing:0 !important;text-transform:none !important;font-weight:400 !important;',
+    'box-shadow:0 6px 16px rgba(0,0,0,.16) !important;white-space:pre-wrap !important;word-break:break-word !important;',
+    'outline:none !important;min-height:18px !important;}',
+    '#desktop-hero-card .xxj-bub-r{align-self:flex-end !important;max-width:60% !important;',
+    'padding:7px 12px !important;border-radius:14px !important;border-bottom-right-radius:6px !important;',
+    'background:#ffffff !important;color:#20242c !important;font-size:11.5px !important;line-height:1.35 !important;',
+    'font-family:inherit !important;letter-spacing:0 !important;text-transform:none !important;font-weight:400 !important;',
+    'box-shadow:0 6px 16px rgba(0,0,0,.14) !important;white-space:pre-wrap !important;word-break:break-word !important;',
+    'outline:none !important;min-height:16px !important;}',
     '#desktop-hero-card #hero-note:focus,#desktop-hero-card .xxj-bub-r:focus{',
-    'box-shadow:0 0 0 2px rgba(91,127,166,.6),0 8px 20px rgba(0,0,0,.2) !important;}',
-    '#desktop-hero-card .xxj-chat-tip{align-self:flex-start !important;font-size:10px !important;',
-    'letter-spacing:.08em !important;opacity:.45 !important;text-transform:uppercase !important;margin:0 !important;}',
+    'box-shadow:0 0 0 2px rgba(91,127,166,.6),0 6px 16px rgba(0,0,0,.18) !important;}',
+    '#desktop-hero-card .xxj-chat-tip{align-self:flex-start !important;font-size:9px !important;',
+    'letter-spacing:.08em !important;opacity:.42 !important;text-transform:uppercase !important;margin:0 !important;}',
     '#desktop-hero-card .hero-actions{align-self:flex-end !important;margin:0 !important;}',
 
     /* ===== 网格容器：分页舞台 ===== */
@@ -109,10 +114,17 @@
     '@media (max-width:360px){#app-grid .app-tile-ico{width:46px;height:46px;font-size:21px;}#app-grid .app-tile-name{font-size:10px;}}'
   ].join('');
 
+  function syncThemeColor() {
+    try {
+      var m = document.querySelector('meta[name="theme-color"]');
+      if (m) m.setAttribute('content', '#0f1218');
+    } catch (e) {}
+  }
+
   function injectCss() {
-    if (document.getElementById('xxj-app-icon-grid-v7')) return;
+    if (document.getElementById('xxj-app-icon-grid-v8')) return;
     var s = document.createElement('style');
-    s.id = 'xxj-app-icon-grid-v7';
+    s.id = 'xxj-app-icon-grid-v8';
     s.textContent = CSS;
     document.head.appendChild(s);
   }
@@ -166,8 +178,8 @@
   }
 
   function bindSwipe(grid) {
-    if (grid.dataset.xxjSwipeV7 === '1') return;
-    grid.dataset.xxjSwipeV7 = '1';
+    if (grid.dataset.xxjSwipeV8 === '1') return;
+    grid.dataset.xxjSwipeV8 = '1';
     var x0 = 0, y0 = 0, t0 = 0, tracking = false;
     grid.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 1) return;
@@ -204,8 +216,8 @@
 
   function buildGrid() {
     var grid = document.getElementById('app-grid');
-    if (!grid || grid.dataset.xxjTileGrid === 'v7') return;
-    grid.dataset.xxjTileGrid = 'v7';
+    if (!grid || grid.dataset.xxjTileGrid === 'v8') return;
+    grid.dataset.xxjTileGrid = 'v8';
 
     var pageCount = Math.ceil(APPS.length / PER_PAGE);
     var pagesHtml = '';
@@ -235,8 +247,8 @@
   };
 
   function bindClicks() {
-    if (document.__xxjTileClickV7) return;
-    document.__xxjTileClickV7 = true;
+    if (document.__xxjTileClickV8) return;
+    document.__xxjTileClickV8 = true;
     document.addEventListener('click', function (e) {
       var t = e.target && e.target.closest ? e.target.closest('#app-grid [data-app]') : null;
       if (!t) return;
@@ -248,15 +260,49 @@
     }, true);
   }
 
+
+  /* ===== 全屏：隐去系统状态栏（只在浏览器模式下请求一次） ===== */
+  function inAppDisplay() {
+    try {
+      return !!(window.matchMedia && (
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.matchMedia('(display-mode: standalone)').matches
+      ));
+    } catch (e) { return false; }
+  }
+
+  function requestFs() {
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) return;
+      var el = document.documentElement;
+      var fn = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (!fn) return;
+      var ret = fn.call(el, { navigationUI: 'hide' });
+      if (ret && ret.catch) ret.catch(function () {});
+    } catch (e) {}
+  }
+
+  function armFullscreen() {
+    if (document.__xxjFsV8) return;
+    document.__xxjFsV8 = true;
+    var first = function () {
+      window.removeEventListener('touchend', first, true);
+      window.removeEventListener('click', first, true);
+      requestFs();
+    };
+    window.addEventListener('touchend', first, true);
+    window.addEventListener('click', first, true);
+  }
+
   /* ===== 顶部时间卡片 → 对话框（p2 风格，文字可改） ===== */
-  var LS_R = 'xxjChatRightV7';
+  var LS_R = 'xxjChatRightV8';
 
   function buildChat() {
     var card = document.getElementById('desktop-hero-card');
     var note = document.getElementById('hero-note');
     if (!card || !note) return;
-    if (card.dataset.xxjChat === 'v7') return;
-    card.dataset.xxjChat = 'v7';
+    if (card.dataset.xxjChat === 'v8') return;
+    card.dataset.xxjChat = 'v8';
 
     var right = card.querySelector('.xxj-bub-r');
     if (!right) {
@@ -301,9 +347,11 @@
     n++;
     if (typeof openChatListScreen === 'function' && document.getElementById('app-grid')) {
       injectCss();
+      syncThemeColor();
       buildGrid();
       buildChat();
       bindClicks();
+      armFullscreen();
       clearInterval(iv);
     }
     if (n > 200) clearInterval(iv);
