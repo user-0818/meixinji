@@ -51,20 +51,40 @@
   var D = null;
 
   function blank() {
-    return { cfg: { plan: '18:00', check: '21:30', names: { A: '', B: '' } }, ranges: {}, plans: {} };
+    return { cfg: { plan: '18:00', check: '21:30', names: { A: { nick: '', real: '' }, B: { nick: '', real: '' } } }, ranges: {}, plans: {} };
   }
   function cfg() {
     D.cfg = D.cfg || { plan: '18:00', check: '21:30' };
-    D.cfg.names = D.cfg.names || { A: '', B: '' };
+    var nm = D.cfg.names || {};
+    var fixed = { A: { nick: '', real: '' }, B: { nick: '', real: '' } };
+    ['A', 'B'].forEach(function (w) {
+      var v = nm[w];
+      if (typeof v === 'string') { fixed[w].nick = v; }           /* 老数据：只有网名 */
+      else if (v && typeof v === 'object') { fixed[w].nick = v.nick || ''; fixed[w].real = v.real || ''; }
+    });
+    D.cfg.names = fixed;
     if (!D.cfg.plan) D.cfg.plan = '18:00';
     if (!D.cfg.check) D.cfg.check = '21:30';
     return D.cfg;
   }
   /* 他们俩叫什么：用户自己在设置里填，没填就用「角色A/角色B」 */
-  function nameOf(w) {
+  /* 网名（对外、界面上显示的那个）与真名分开存，一人一对 */
+  function nickOf(w) {
     var c = cfg().names || {};
-    var n = w === 'A' ? c.A : c.B;
-    return (n && String(n).trim()) || ('角色' + w);
+    var v = c[w] || {};
+    return (v.nick && String(v.nick).trim()) || (v.real && String(v.real).trim()) || ('角色' + w);
+  }
+  function realOf(w) {
+    var c = cfg().names || {};
+    var v = c[w] || {};
+    return (v.real && String(v.real).trim()) || '';
+  }
+  /* 界面上统一用网名 */
+  function nameOf(w) { return nickOf(w); }
+  /* 带真名的写法：林晓（陈林晓）；没填真名就只显示网名 */
+  function nameFull(w) {
+    var r = realOf(w);
+    return r && r !== nickOf(w) ? nickOf(w) + '（' + r + '）' : nickOf(w);
   }
   function initialOf(w) {
     var n = nameOf(w);
@@ -481,9 +501,13 @@
       + '<span style="font-size:11px">检查</span>'
       + '<input class="xxj-st2-in" data-st2-tcheck value="' + esc(D.cfg.check) + '" placeholder="21:30" style="max-width:80px">'
       + '<button class="xxj-st2-btn" data-st2-savet>存</button></div>'
-      + '<div class="xxj-st2-row"><span style="font-size:11px">名字</span>'
-      + '<input class="xxj-st2-in" data-st2-na value="' + esc(cfg().names.A || '') + '" placeholder="角色A 叫什么">'
-      + '<input class="xxj-st2-in" data-st2-nb value="' + esc(cfg().names.B || '') + '" placeholder="角色B 叫什么">'
+      + '<div class="xxj-st2-row"><span style="font-size:11px;width:26px">TA·1</span>'
+      + '<input class="xxj-st2-in" data-st2-na value="' + esc(cfg().names.A.nick) + '" placeholder="网名">'
+      + '<input class="xxj-st2-in" data-st2-ra value="' + esc(cfg().names.A.real) + '" placeholder="真名">'
+      + '</div>'
+      + '<div class="xxj-st2-row"><span style="font-size:11px;width:26px">TA·2</span>'
+      + '<input class="xxj-st2-in" data-st2-nb value="' + esc(cfg().names.B.nick) + '" placeholder="网名">'
+      + '<input class="xxj-st2-in" data-st2-rb value="' + esc(cfg().names.B.real) + '" placeholder="真名">'
       + '</div></div>';
     return html;
   }
@@ -572,8 +596,11 @@
       if (t.closest('[data-st2-savet]')) {
         var tp = el.querySelector('[data-st2-tplan]'), tc = el.querySelector('[data-st2-tcheck]');
         var na = el.querySelector('[data-st2-na]'), nb = el.querySelector('[data-st2-nb]');
-        if (na) cfg().names.A = na.value.trim();
-        if (nb) cfg().names.B = nb.value.trim();
+        var ra = el.querySelector('[data-st2-ra]'), rb = el.querySelector('[data-st2-rb]');
+        if (na) cfg().names.A.nick = na.value.trim();
+        if (ra) cfg().names.A.real = ra.value.trim();
+        if (nb) cfg().names.B.nick = nb.value.trim();
+        if (rb) cfg().names.B.real = rb.value.trim();
         var ok = function (s) { return /^\d{1,2}:\d{2}$/.test(s); };
         if (tp && ok(tp.value.trim())) D.cfg.plan = tp.value.trim();
         if (tc && ok(tc.value.trim())) D.cfg.check = tc.value.trim();
@@ -658,6 +685,9 @@
       }).join('；') + '。');
     }
     if (p.check && p.check.msg) parts.push('晚上检查时说的是：' + p.check.msg);
+    parts.push('他俩的网名和真名是：' + WHO.map(function (w) {
+      return nickOf(w) + (realOf(w) && realOf(w) !== nickOf(w) ? '（真名 ' + realOf(w) + '）' : '');
+    }).join('、') + '，平时叫网名，别把两个人的名字混用。');
     parts.push('聊到学习、问起任务进度、或者他做了/没做的时候，可以自然地提一句、盯着他一点，别机械罗列。');
     return parts.join(' ');
   }
