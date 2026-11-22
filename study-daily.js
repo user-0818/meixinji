@@ -625,9 +625,78 @@
     return true;
   }
 
+
+  /* ===== 让角色知道今天的任务：给每次 AI 请求垫一条 [学习] 系统消息 ===== */
+  var WK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+  function contextLine() {
+    if (!D) return '';
+    if (!hasRange()) return '';
+    var t = today();
+    var p = planOf(t);
+    if (!p.plannedAt) return '';
+    var total = 0, done = 0, list = [];
+    SUBJ.forEach(function (s) {
+      (p.tasks[s.k] || []).forEach(function (x) {
+        total++;
+        if (x.d) done++;
+        if (list.length < 9) list.push(s.n + '·' + x.t + (x.d ? '（已完成）' : '（未完成）'));
+      });
+    });
+    var parts = [];
+    var dt = new Date(t + 'T12:00:00');
+    parts.push('[学习] 今天 ' + t + '（' + WK[dt.getDay()] + '）。晚饭时他们给你排的任务共 '
+      + total + ' 条，已完成 ' + done + ' 条：' + list.join('、') + '。');
+    if (p.charTasks.length) {
+      parts.push('他们俩自己也做了：' + p.charTasks.map(function (c) {
+        return nameOf(c.who) + ' ' + (subjName(c.subj) || '') + '·' + c.t + (c.d ? '（已交上来，附了照片）' : '（还没做完）');
+      }).join('；') + '。');
+    }
+    if (p.mats.length) {
+      parts.push('今天他们还传了卷子：' + p.mats.slice(0, 2).map(function (m) {
+        return nameOf(m.who) + ' 的' + m.subjName + '《' + m.title + '》' + m.score + ' 分，错 ' + m.wrong + ' 处';
+      }).join('；') + '。');
+    }
+    if (p.check && p.check.msg) parts.push('晚上检查时说的是：' + p.check.msg);
+    parts.push('聊到学习、问起任务进度、或者他做了/没做的时候，可以自然地提一句、盯着他一点，别机械罗列。');
+    return parts.join(' ');
+  }
+
+  function installContextInject() {
+    if (window.__xxjStFetch) return;
+    var orig = window.fetch;
+    if (!orig) return;
+    window.__xxjStFetch = true;
+    window.fetch = function (input, init) {
+      try {
+        var url = typeof input === 'string' ? input : (input && input.url) || '';
+        if (/\/chat\/completions/.test(url) && init && typeof init.body === 'string') {
+          var line = contextLine();
+          if (line) {
+            var body = JSON.parse(init.body);
+            if (body && Array.isArray(body.messages)) {
+              var has = body.messages.some(function (m) {
+                return m && typeof m.content === 'string' && m.content.indexOf('[学习]') === 0;
+              });
+              if (!has) {
+                body.messages.unshift({ role: 'system', content: line });
+                init = Object.assign({}, init, { body: JSON.stringify(body) });
+              }
+            }
+          }
+        }
+      } catch (e) {}
+      return orig.call(this, input, init);
+    };
+  }
+  window.xxjStudyContextLine = contextLine;
+
+  function subjName(k) { var s = SUBJ.filter(function (x) { return x.k === k; })[0]; return s ? s.n : ''; }
+
   function boot() {
     injectCss();
     D = load();
+    installContextInject();
     tick();
     watch();
     refreshBadge();
