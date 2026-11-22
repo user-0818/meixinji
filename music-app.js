@@ -295,6 +295,7 @@
     if (!t) return;
     M.cur = t.id;
     render();          /* 先切卡片，哪怕后面自动播放被拦了，也能看到这首歌 */
+    toNative(true);
     idbGet(id).then(function (blob) {
       if (!blob) { toast('文件丢了，重新导入一下'); return; }
       if (curUrl) URL.revokeObjectURL(curUrl);
@@ -308,7 +309,28 @@
     });
   }
 
+  /* 把播放状态同步给原生（APK 里才有 AndroidBridge），锁屏卡片才会跟着动 */
+  var lastNativeAt = 0;
+  function toNative(force) {
+    try {
+      if (!window.AndroidBridge || !window.AndroidBridge.musicState) return;
+      var t = curTrack();
+      if (!t) return;
+      var now = Date.now();
+      if (!force && now - lastNativeAt < 4000) return;
+      lastNativeAt = now;
+      window.AndroidBridge.musicState(JSON.stringify({
+        title: t.name || '',
+        artist: t.artist || '',
+        pos: Math.round(audio.currentTime || 0),
+        dur: Math.round(audio.duration || t.dur || 0),
+        playing: !audio.paused
+      }));
+    } catch (e) {}
+  }
+
   function syncMediaSession(t) {
+    toNative(true);          /* 先给原生，WebView 里 navigator.mediaSession 可能不存在 */
     try {
       if (!('mediaSession' in navigator)) return;
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -461,6 +483,9 @@
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
   });
   audio.addEventListener('ended', function () { step(1); });
+  audio.addEventListener('play', function () { toNative(true); });
+  audio.addEventListener('pause', function () { toNative(true); });
+  audio.addEventListener('timeupdate', function () { toNative(false); });
 
   function ensureUI() {
     var el = document.getElementById('xxj-mu');
@@ -579,6 +604,25 @@
 
   /* 给外部（角色反应 / 分享卡片）留的接口 */
   window.xxjMusicOpen = openMusic;
+
+  /* 锁屏 / 通知栏 / 蓝牙耳机的按键，由原生转过来 */
+  window.xxjMusicCmd = function (cmd) {
+    cmd = String(cmd || '');
+    if (cmd === 'play') {
+      if (!M.cur && M.tracks.length) playTrack(M.tracks[0].id);
+      else audio.play().catch(function () {});
+    } else if (cmd === 'pause') {
+      audio.pause();
+    } else if (cmd === 'next') {
+      step(1);
+    } else if (cmd === 'prev') {
+      step(-1);
+    } else if (cmd.indexOf('seek:') === 0) {
+      var sec = parseFloat(cmd.slice(5));
+      if (isFinite(sec)) { audio.currentTime = Math.max(0, sec); toNative(true); }
+    }
+    return true;
+  };
 
   window.xxjMusicNow = function () {
     var t = curTrack();
