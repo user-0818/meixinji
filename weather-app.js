@@ -102,7 +102,21 @@
     try { localStorage.setItem(W_KEY, JSON.stringify(d)); } catch (e) {}
   }
 
+  /* 默认地点：山东省德州市德城区（没设置过、或者以前用的是「当前位置」，都落到这儿） */
+  var DEFAULT_PLACE = { name: '山东 · 德州 · 德城区', lat: 37.4508, lon: 116.3166 };
+  var DZ_KEY = 'xxjWeatherDezhou';
+
   var st = readState();
+  (function () {
+    var force = false;
+    try { force = localStorage.getItem(DZ_KEY) !== '1'; } catch (e) { force = true; }
+    if (force || !st.place || !st.place.name || st.place.name === '当前位置') {
+      st.place = DEFAULT_PLACE;
+      st.data = null; st.ts = 0;
+      writeState(st);
+      try { localStorage.setItem(DZ_KEY, '1'); } catch (e) {}
+    }
+  })();
   var view = 'home';     /* home | city */
   var loading = false;
 
