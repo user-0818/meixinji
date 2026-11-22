@@ -106,26 +106,26 @@
     '.polaroid-board{display:none !important;}',
     '.layout-shell>.after-polaroid{margin-top:9px !important;}',
     '#app-grid{margin-top:0 !important;}',
-    '#xxj-cdc{display:flex;flex-direction:column;width:100%;margin:0;padding:11px 13px 10px;text-align:left;',
+    '#xxj-cdc{display:flex;flex-direction:column;width:100%;margin:0;padding:9px 13px 8px;text-align:left;',
     'cursor:pointer;border-radius:20px;border:1px solid var(--line,rgba(255,255,255,.10));background:var(--bg-card,#fff);',
     'box-shadow:0 4px 16px -6px rgba(0,0,0,.10);font-family:inherit;color:var(--text-main,#17191c);',
     '-webkit-tap-highlight-color:transparent;}',
-    '#xxj-cdc .xxj-cdc-top{display:flex;align-items:center;justify-content:space-between;flex:none;margin-bottom:7px;}',
+    '#xxj-cdc .xxj-cdc-top{display:flex;align-items:center;justify-content:space-between;flex:none;margin-bottom:4px;}',
     '#xxj-cdc .xxj-cdc-lab{font-family:"Space Mono",ui-monospace,monospace;font-size:7px;letter-spacing:.16em;',
     'text-transform:uppercase;color:var(--text-sub,#6d727b);opacity:.8;}',
     '#xxj-cdc .xxj-cdc-plus{font-size:11px;color:var(--accent,#5b7fa6);opacity:.85;line-height:1;}',
     '#xxj-cdc .xxj-cdc-rows{display:flex;flex-direction:column;gap:0;flex:none;}',
-    '#xxj-cdc .xxj-cdc-r{display:flex;align-items:center;gap:8px;padding:6px 0;}',
+    '#xxj-cdc .xxj-cdc-r{display:flex;align-items:center;gap:8px;padding:4.5px 0;}',
     '#xxj-cdc .xxj-cdc-r+.xxj-cdc-r{border-top:1px solid rgba(var(--tint-rgb,58,92,137),.12);}',
     '#xxj-cdc .xxj-cdc-rl{flex:1;min-width:0;}',
-    '#xxj-cdc .xxj-cdc-rl b{display:block;font-size:11.5px;font-weight:500;line-height:1.3;',
+    '#xxj-cdc .xxj-cdc-rl b{display:block;font-size:11px;font-weight:500;line-height:1.25;',
     'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-    '#xxj-cdc .xxj-cdc-rl i{display:block;font-style:normal;font-size:8.5px;letter-spacing:.04em;',
-    'color:var(--text-sub,#6d727b);margin-top:2px;}',
+    '#xxj-cdc .xxj-cdc-rl i{display:block;font-style:normal;font-size:8px;letter-spacing:.03em;',
+    'color:var(--text-sub,#6d727b);margin-top:1.5px;}',
     '#xxj-cdc .xxj-cdc-rr{flex:none;text-align:right;display:flex;align-items:baseline;gap:2px;}',
-    '#xxj-cdc .xxj-cdc-rr em{font-family:"Space Mono",ui-monospace,monospace;font-style:normal;font-size:20px;',
+    '#xxj-cdc .xxj-cdc-rr em{font-family:"Space Mono",ui-monospace,monospace;font-style:normal;font-size:17.5px;',
     'line-height:1;color:var(--accent,#5b7fa6);}',
-    '#xxj-cdc .xxj-cdc-rr i{font-style:normal;font-size:8.5px;color:var(--text-sub,#6d727b);}',
+    '#xxj-cdc .xxj-cdc-rr i{font-style:normal;font-size:8px;color:var(--text-sub,#6d727b);}',
     '#xxj-cdc .xxj-cdc-more{font-size:8.5px;color:var(--text-sub,#6d727b);opacity:.7;margin-top:6px;flex:none;',
     'letter-spacing:.04em;}',
     '#xxj-cdc.is-empty .xxj-cdc-rows{padding:2px 0 4px;}',
@@ -208,7 +208,7 @@
       return;
     }
     el.classList.remove('is-empty');
-    var show = rows.slice(0, 3);
+    var show = rows.slice(0, 5);
     var html = '<span class="xxj-cdc-top"><span class="xxj-cdc-lab">Countdown</span>'
       + '<span class="xxj-cdc-plus">＋</span></span><span class="xxj-cdc-rows">';
     html += show.map(function (x) {
