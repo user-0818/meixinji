@@ -188,37 +188,99 @@
   }
 
   function bindSwipe(grid) {
-    if (grid.dataset.xxjSwipeV10 === '1') return;
-    grid.dataset.xxjSwipeV10 = '1';
-    var x0 = 0, y0 = 0, t0 = 0, tracking = false;
-    grid.addEventListener('touchstart', function (e) {
-      if (e.touches.length !== 1) return;
-      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
-      t0 = Date.now(); tracking = true;
+    if (grid.dataset.xxjSwipeV11 === '1') return;
+    grid.dataset.xxjSwipeV11 = '1';
+
+    /* 滑动区域放宽到整个桌面（含小组件、hero 卡），不再只有图标网格那一块；
+       屏幕最左右两侧留给 back-swipe 的侧滑返回，这里不抢。 */
+    var host = grid.closest('.layout-shell') || grid;
+    var EDGE_IGNORE = 34;
+
+    var x0 = 0, y0 = 0, t0 = 0, tracking = false, locked = '';
+
+    function pages() {
+      return Array.prototype.slice.call(grid.querySelectorAll('.xxj-pg'));
+    }
+    function edgeOk(x) {
+      return x > EDGE_IGNORE && x < (window.innerWidth - EDGE_IGNORE);
+    }
+    function turn(dx) {
+      var cur = activeIndex(pages());
+      if (cur < 0) cur = 0;
+      setPage(grid, dx < 0 ? cur + 1 : cur - 1, dx < 0 ? 'right' : 'left');
+    }
+
+    /* 翻页那一下松手会顺带触发 click，把落点上的图标误打开，这里吞掉一次 */
+    var swallow = 0;
+    function swallowClick() { swallow = Date.now(); }
+    host.addEventListener('click', function (e) {
+      if (Date.now() - swallow < 500) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+
+    /* ---- 触摸 ---- */
+    host.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1) { tracking = false; return; }
+      var t = e.touches[0];
+      if (!edgeOk(t.clientX)) { tracking = false; return; }
+      x0 = t.clientX; y0 = t.clientY;
+      t0 = Date.now(); tracking = true; locked = '';
     }, { passive: true });
-    grid.addEventListener('touchmove', function (e) {
+
+    host.addEventListener('touchmove', function (e) {
       if (!tracking || e.touches.length !== 1) return;
-      var dy = Math.abs(e.touches[0].clientY - y0);
-      if (dy > 30) tracking = false;    /* 垂直滚动优先，不当作翻页 */
-    }, { passive: true });
-    grid.addEventListener('touchend', function (e) {
+      var t = e.touches[0];
+      var dx = t.clientX - x0, dy = t.clientY - y0;
+      if (!locked) {
+        /* 先判断意图：横向够明显就算翻页，纵向明显就放开手让页面滚 */
+        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.15) locked = 'x';
+        else if (Math.abs(dy) > 16 && Math.abs(dy) > Math.abs(dx) * 1.15) locked = 'y';
+      }
+      if (locked === 'x' && e.cancelable) e.preventDefault();
+    }, { passive: false });
+
+    host.addEventListener('touchcancel', function () { tracking = false; }, { passive: true });
+
+    host.addEventListener('touchend', function (e) {
       if (!tracking) return;
       tracking = false;
       var t = e.changedTouches && e.changedTouches[0];
       if (!t) return;
+      if (locked === 'y') return;
       var dx = t.clientX - x0, dy = t.clientY - y0;
-      var dt = Date.now() - t0;
-      if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx) || dt > 600) return;
-      var cur = activeIndex(Array.prototype.slice.call(grid.querySelectorAll('.xxj-pg')));
-      if (cur < 0) cur = 0;
-      setPage(grid, dx < 0 ? cur + 1 : cur - 1, dx < 0 ? 'right' : 'left');
+      var dt = Math.max(1, Date.now() - t0);
+      var speed = Math.abs(dx) / dt;          /* px/ms */
+      var far = Math.abs(dx) >= 26;
+      var fling = Math.abs(dx) >= 14 && speed >= 0.25;
+      if (!far && !fling) return;
+      if (Math.abs(dy) > Math.abs(dx)) return;
+      if (dt > 900) return;
+      if (Math.abs(dy) > 90) return;
+      swallowClick();
+      turn(dx);
     }, { passive: true });
+
+    /* ---- 鼠标拖动（桌面/网页版也能划） ---- */
+    var mDown = false, mx0 = 0, my0 = 0, mt0 = 0;
+    host.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      if (!edgeOk(e.clientX)) return;
+      mDown = true; mx0 = e.clientX; my0 = e.clientY; mt0 = Date.now();
+    });
+    host.addEventListener('mouseup', function (e) {
+      if (!mDown) return;
+      mDown = false;
+      var dx = e.clientX - mx0, dy = e.clientY - my0;
+      if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx) || Date.now() - mt0 > 900) return;
+      swallowClick();
+      turn(dx);
+    });
+
+    /* ---- 圆点 ---- */
     grid.addEventListener('click', function (e) {
       var d = e.target && e.target.closest ? e.target.closest('.xxj-dots span') : null;
       if (!d) return;
       e.preventDefault(); e.stopPropagation();
-      var pages = Array.prototype.slice.call(grid.querySelectorAll('.xxj-pg'));
-      var cur = activeIndex(pages); if (cur < 0) cur = 0;
+      var cur = activeIndex(pages()); if (cur < 0) cur = 0;
       var target = parseInt(d.dataset.dot, 10) || 0;
       setPage(grid, target, target > cur ? 'right' : 'left');
     }, true);
