@@ -440,7 +440,7 @@
         + p.mats.length + ' 份</em></div>';
       p.mats.forEach(function (m) {
         html += '<div class="xxj-st2-paper"><span class="xxj-st2-score">' + esc(m.score) + '</span>'
-          + '<div class="xxj-st2-pt"><b>' + esc(m.title) + '</b><span>' + esc(m.subjName) + ' · ' + esc(m.who) + ' · ' + esc(m.at) + '</span></div>'
+          + '<div class="xxj-st2-pt"><b>' + esc(m.title) + '</b><span>' + esc(m.subjName) + ' · ' + esc(nameOf(m.who)) + ' · ' + esc(m.at) + '</span></div>'
           + '<div class="xxj-st2-pm">错 ' + esc(m.wrong) + ' 处 · ' + esc(rnd(m.lines)) + '</div></div>';
       });
       html += '</div>';
