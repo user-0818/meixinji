@@ -149,14 +149,33 @@
   function buildCharTasks(date) {
     var p = planOf(date);
     if (p.charTasks.length) return;
+    var used = [];
     WHO.forEach(function (w) {
-      var k = rnd(SUBJ).k;
+      var pool = SUBJ.filter(function (x) { return used.indexOf(x.k) < 0; });
+      if (!pool.length) pool = SUBJ;
+      var s2 = rnd(pool);
+      used.push(s2.k);
       p.charTasks.push({
-        who: w, subj: k, t: rnd((CHAR_T[k] || ['刷一张卷子'])),
+        who: w, subj: s2.k, t: rnd((CHAR_T[s2.k] || ['刷一张卷子'])),
         d: false, photo: null, at: null
       });
     });
     save();
+  }
+
+  /* 他们自己写完交上来：到晚上检查点就补「已完成 + 照片」 */
+  var CHAR_NOTE = ['拍了一张，字有点潦草', '写完了，帮我看看对不对', '这张是重写过的', '老师批过了'];
+  function markCharDone(date) {
+    var p = planOf(date);
+    var ch = false;
+    p.charTasks.forEach(function (c) {
+      if (c.d) return;
+      c.d = true;
+      c.at = nowHM();
+      c.photo = { note: rnd(CHAR_NOTE) };
+      ch = true;
+    });
+    if (ch) save();
   }
 
   /* ---------- 生成：他们上传的卷子 ---------- */
@@ -257,8 +276,9 @@
     /* 每天至少一张卷子 */
     var p2 = planOf(t);
     if (!p2.mats.length && nowHM() >= '09:00') buildMat(t);
-    /* 到点检查 */
+    /* 到点检查：他们先把自己那份交了，再来看我的 */
     if (nowHM() >= D.cfg.check) {
+      markCharDone(t);
       var cp = planOf(t);
       if (!cp.check && cp.plannedAt) buildCheck(t);
     }
