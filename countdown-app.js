@@ -139,8 +139,8 @@
     'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none;}',
     '#xxj-cdc .xxj-cdc-date{font-family:"Space Mono",ui-monospace,monospace;font-size:7.5px;letter-spacing:.06em;',
     'color:var(--text-sub,#6d727b);opacity:.75;margin-top:2px;flex:none;}',
-    '#xxj-cdc.is-empty .xxj-cdc-num{color:var(--text-sub,#6d727b);opacity:.5;font-size:30px;}',
-    '#xxj-cdc.is-empty .xxj-cdc-name{color:var(--text-sub,#6d727b);font-size:10px;white-space:normal;line-height:1.5;}',
+    '#xxj-cdc.is-empty .xxj-cdc-mid{justify-content:center;align-items:flex-start;}',
+    '#xxj-cdc.is-empty .xxj-cdc-name{color:var(--text-sub,#6d727b);font-size:10.5px;white-space:normal;line-height:1.55;}',
 
     /* ===== App 界面 ===== */
     '.xxj-cd{position:fixed;inset:0;z-index:76;display:none;flex-direction:column;',
@@ -204,9 +204,8 @@
       el.classList.add('is-empty');
       el.innerHTML = '<span class="xxj-cdc-top"><span class="xxj-cdc-lab">Countdown</span>'
         + '<span class="xxj-cdc-plus">＋</span></span>'
-        + '<span class="xxj-cdc-mid"><span class="xxj-cdc-num">＋</span></span>'
-        + '<span class="xxj-cdc-name">加一个日子</span>'
-        + '<span class="xxj-cdc-date">生日 · 纪念日 · 倒数</span>';
+        + '<span class="xxj-cdc-mid"><span class="xxj-cdc-name">还没有记着哪个日子</span>'
+        + '<span class="xxj-cdc-date">生日 · 纪念日 · 倒数都行</span></span>';
       return;
     }
     el.classList.remove('is-empty');
