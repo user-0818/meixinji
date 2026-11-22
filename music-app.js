@@ -542,18 +542,19 @@
     }, true);
   }
 
-  /* ---------- 挂到桌面网格 ---------- */
+  /* ---------- 桌面网格 ----------
+     图标现在由 app-grid.js 的 APPS 直接生成（追加会被它重建时冲掉），
+     这里只做一次兜底：万一旧版 app-grid 没带音乐格子，就补一个。 */
   function addTile() {
     var grid = document.getElementById('app-grid');
     if (!grid) return false;
     if (grid.dataset.xxjMusic === '1') return true;
     var pages = grid.querySelectorAll('.xxj-pg');
     if (!pages.length) return false;
+    if (grid.querySelector('.app-tile[data-app="音乐"]')) { grid.dataset.xxjMusic = '1'; return true; }
+    /* 只有网格已经完成分页构建（有 .xxj-pager）才补，且不覆盖 APPS 版 */
+    if (!grid.querySelector('.xxj-pager')) return false;
     var last = pages[pages.length - 1];
-    if (last.querySelector('.app-tile[data-app="音乐"]')) {
-      grid.dataset.xxjMusic = '1';
-      return true;
-    }
     var btn = document.createElement('button');
     btn.className = 'app-tile';
     btn.type = 'button';
