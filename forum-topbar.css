@@ -1,0 +1,36 @@
+/* === 顶部标题与按钮分离（xxj 调整，覆盖 forum.css） === */
+.forum-wx-wechat-topbar-inner {
+  height: auto;
+  min-height: 60px;
+  align-items: center;
+  gap: 16px;
+  padding: calc(11px + env(safe-area-inset-top, 0px)) 18px 12px;
+}
+.forum-wx-wechat-back {
+  margin: 0 4px 0 0;
+  width: 38px;
+  height: 38px;
+  font-size: 1.5rem;
+}
+.forum-wx-wechat-brand {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 14px;
+  padding-right: 22px;
+}
+.forum-wx-wechat-kicker {
+  margin-bottom: 8px;
+  letter-spacing: 0.16em;
+}
+.forum-wx-wechat-title {
+  line-height: 1.12;
+}
+.forum-wx-wechat-actions {
+  gap: 12px;
+  padding-left: 10px;
+  flex: 0 0 auto;
+}
+#forum-screen .forum-sector-row {
+  padding-top: 6px;
+  padding-bottom: 10px;
+}
