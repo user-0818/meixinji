@@ -188,26 +188,48 @@
     return null;
   }
 
-  /* ---------- 边缘手势 ---------- */
-  var tracking = false, sx = 0, sy = 0, st = 0, armed = false, bar = null;
+  /* ---------- 边缘手势（左右两侧都能返回） ---------- */
+  var tracking = false, armed = false, bar = null;
+  var dir = 'left';           /* left：左边缘向右滑；right：右边缘向左滑 */
+  var sx = 0, sy = 0, st = 0;
 
   function mkBar() {
     if (bar) return bar;
     bar = document.createElement('div');
-    bar.style.cssText = 'position:fixed;left:0;top:0;bottom:0;width:3px;z-index:9999;'
+    bar.style.cssText = 'position:fixed;top:0;bottom:0;width:3px;z-index:2147483000;'
       + 'background:linear-gradient(180deg,#8fc0ea,#5b7fa6);opacity:0;'
       + 'transition:opacity .12s,width .12s;pointer-events:none;';
     document.body.appendChild(bar);
     return bar;
   }
 
+  function placeBar(which) {
+    var b = mkBar();
+    b.style.left = which === 'left' ? '0' : 'auto';
+    b.style.right = which === 'right' ? '0' : 'auto';
+  }
+
+  function edgeOf(t) {
+    var w = window.innerWidth;
+    if (t.clientX <= EDGE) return 'left';
+    if (t.clientX >= w - EDGE) return 'right';
+    return null;
+  }
+
+  /* 朝"里面"滑了多少（左右统一成正数） */
+  function progress(t) {
+    var d = dir === 'left' ? (t.clientX - sx) : (sx - t.clientX);
+    return d;
+  }
+
   function onStart(e) {
     var t = e.touches ? e.touches[0] : e;
     if (!t) return;
-    if (t.clientX > EDGE) { armed = false; return; }
-    if (!hasLayer()) { armed = false; return; }
+    var edge = edgeOf(t);
+    if (!edge || !hasLayer()) { armed = false; tracking = false; return; }
     armed = true;
     tracking = true;
+    dir = edge;
     sx = t.clientX; sy = t.clientY; st = Date.now();
   }
 
@@ -215,13 +237,14 @@
     if (!tracking) return;
     var t = e.touches ? e.touches[0] : e;
     if (!t) return;
-    var dx = t.clientX - sx, dy = t.clientY - sy;
-    if (dx > 8 && Math.abs(dy) < dx * 1.4) {
-      var p = Math.min(1, dx / MIN_DX);
-      var b = mkBar();
-      b.style.opacity = String(0.25 + p * 0.6);
-      b.style.width = (3 + p * 5) + 'px';
-      if (!e.__xPassive) { try { e.preventDefault(); } catch (err) {} }
+    var p = progress(t);
+    var dy = t.clientY - sy;
+    if (p > 6 && Math.abs(dy) < p * 1.4) {
+      var q = Math.min(1, p / MIN_DX);
+      placeBar(dir);
+      bar.style.opacity = String(0.25 + q * 0.6);
+      bar.style.width = (3 + q * 5) + 'px';
+      try { e.preventDefault(); } catch (err) {}
     }
   }
 
@@ -230,43 +253,39 @@
     if (!tracking) { armed = false; return; }
     tracking = false;
     var t = (e.changedTouches && e.changedTouches[0]) || e;
-    var dx = t ? t.clientX - sx : 0;
+    var p = t ? progress(t) : 0;
     var dy = t ? t.clientY - sy : 0;
     var ms = Date.now() - st;
-    var fast = ms < 260 && dx > 34;
-    var ok = dx >= MIN_DX || fast;
-    if (ok && Math.abs(dy) < Math.max(70, Math.abs(dx) * MAX_DY_RATIO) && ms < MAX_MS) {
+    var fast = ms < 260 && p > 30;
+    var ok = p >= MIN_DX || fast;
+    if (ok && Math.abs(dy) < Math.max(70, Math.abs(p) * MAX_DY_RATIO) && ms < MAX_MS) {
       var r = goBack();
       if (r && navigator.vibrate) { try { navigator.vibrate(8); } catch (err) {} }
     }
     armed = false;
   }
 
-  /* ---------- 关键：抢回浏览器的"边缘返回手势" ---------- */
+  /* ---------- 抢回浏览器的"边缘返回手势" ---------- */
   function killOverscroll() {
     if (document.getElementById('xxj-back-css')) return;
     var st = document.createElement('style');
     st.id = 'xxj-back-css';
-    /* 这两条是让 Chrome 不再把左右边缘滑动当成"浏览器后退" */
     st.textContent = 'html,body{overscroll-behavior-x:none!important;overscroll-behavior-y:auto;'
       + '-webkit-overflow-scrolling:touch;}';
     document.head.appendChild(st);
   }
 
-  /* 历史里垫一个"挡板"，系统返回先吃掉这一层，不会直接退出页面 */
+  /* 历史里垫一个挡板：系统返回先吃掉这一层，不会直接退出页面 */
   var guard = 0;
   function armGuard() {
     if (guard) return;
-    try {
-      history.pushState({ xxjBackGuard: 1 }, '', location.href);
-      guard = 1;
-    } catch (e) {}
+    try { history.pushState({ xxjBackGuard: 1 }, '', location.href); guard = 1; } catch (e) {}
   }
 
   function onPop() {
     var r = goBack(true);
-    if (r) { guard = 0; armGuard(); }      /* 还有界面 → 补一层，继续留在页面里 */
-    else { guard = 0; }                    /* 已经在桌面 → 放行走人 */
+    if (r) { guard = 0; armGuard(); }
+    else { guard = 0; }
   }
 
   function bind() {
@@ -278,7 +297,10 @@
     document.addEventListener('touchstart', onStart, { passive: true, capture: true });
     document.addEventListener('touchmove', onMove, { passive: false, capture: true });
     document.addEventListener('touchend', onEnd, { passive: true, capture: true });
-    document.addEventListener('touchcancel', function () { tracking = false; if (bar) bar.style.opacity = '0'; }, { passive: true, capture: true });
+    document.addEventListener('touchcancel', function () {
+      tracking = false;
+      if (bar) bar.style.opacity = '0';
+    }, { passive: true, capture: true });
   }
 
   /* 公开出去，方便别处调用 */
