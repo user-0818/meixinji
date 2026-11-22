@@ -469,7 +469,7 @@
     el.id = 'xxj-mu';
     el.className = 'xxj-mu';
     el.innerHTML = '<header class="xxj-mu-top">'
-      + '<button class="xxj-mu-back" data-mu-back>‹ 桌面</button>'
+      + '<button class="xxj-mu-back" data-mu-back data-back>‹ 桌面</button>'
       + '<span class="xxj-mu-tag">MUSIC</span></header>'
       + '<div class="xxj-mu-body" id="xxj-mu-body"></div>';
     document.body.appendChild(el);
