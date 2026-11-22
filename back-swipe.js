@@ -234,21 +234,23 @@
       var body = document.getElementById('xxj-sd-body');
       var isHome = body && body.querySelector('.xxj-sd-grid');
       var sBack = document.querySelector('#xxj-study .xxj-sd-back');
-      if (!isHome && sBack) { sBack.click(); return 'study:subject'; }
+      if (!isHome && sBack) { forceCloseLater(document.getElementById('xxj-study')); sBack.click(); return 'study:subject'; }
       document.getElementById('xxj-study').classList.remove('open');
       return 'study:home';
     }
 
     /* 3) 天气 / 生活 */
     if (weatherOpen()) {
+      var wxEl = document.getElementById('xxj-wx');
       var wb = document.querySelector('#xxj-wx [data-wx-back]');
-      if (wb) { wb.click(); return 'weather:close'; }
+      if (wb) { forceCloseLater(wxEl); wb.click(); return 'weather:close'; }
       document.getElementById('xxj-wx').classList.remove('open');
       return 'weather:close';
     }
     if (lifeOpen()) {
+      var lfEl = document.getElementById('xxj-life');
       var lb = document.querySelector('#xxj-life [data-lf-back]');
-      if (lb) { lb.click(); return 'life:close'; }
+      if (lb) { forceCloseLater(lfEl); lb.click(); return 'life:close'; }
       document.getElementById('xxj-life').classList.remove('open');
       return 'life:close';
     }
