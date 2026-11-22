@@ -102,45 +102,35 @@
 
   /* ---------- 样式 ---------- */
   var CSS = [
-    /* ===== 桌面：一行两个正方形小组件 ===== */
-    '.xxj-wrow{display:flex;gap:9px;width:100%;}',
-    '.xxj-wrow>#xxj-cdc,.xxj-wrow>.polaroid-board{flex:1 1 0;min-width:0;aspect-ratio:1/1;margin:0;',
-    'border-radius:20px;border:1px solid var(--line,rgba(255,255,255,.10));background:var(--bg-card,#fff);',
-    'box-shadow:0 4px 16px -6px rgba(0,0,0,.10);overflow:hidden;box-sizing:border-box;}',
-    /* 拍立得区：缩进正方形里 */
-    '.xxj-wrow>.polaroid-board{display:flex;flex-direction:column;padding:8px 8px 6px;}',
-    '.xxj-wrow .board-head{margin:0 1px 4px;gap:4px;flex:none;}',
-    '.xxj-wrow .widget-label{font-size:7px;letter-spacing:.12em;opacity:.75;}',
-    '.xxj-wrow #photo-upload-trigger{font-size:7.5px !important;padding:2px 6px !important;border-radius:6px !important;',
-    'min-height:0 !important;line-height:1.5 !important;margin:0 !important;}',
-    '.xxj-wrow .polaroid-stack{position:relative;flex:1;min-height:0;height:auto !important;}',
-    '.xxj-wrow .polaroid-card{width:72px;height:88px;padding:4px 4px 3px;border-radius:3px;',
-    'box-shadow:0 4px 12px rgba(0,0,0,.14);top:50% !important;margin-top:-44px;}',
-    '.xxj-wrow .polaroid-card img{height:61px !important;}',
-    '.xxj-wrow .polaroid-card small{font-size:5.5px;margin-top:2px;letter-spacing:.03em;}',
-    '.xxj-wrow .polaroid-card .tape{width:18px;height:6px;top:-3px;}',
-    '.xxj-wrow .polaroid-card.p1{--tx:-74px;--rot:-6deg;}',
-    '.xxj-wrow .polaroid-card.p2{--tx:-36px;--rot:4deg;}',
-    '.xxj-wrow .polaroid-card.p3{--tx:-2px;--rot:-3deg;}',
-    /* 倒数日小组件 */
-    '#xxj-cdc{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;',
-    'padding:10px 11px 9px;text-align:left;cursor:pointer;border:1px solid var(--line,rgba(255,255,255,.10));',
-    'font-family:inherit;color:var(--text-main,#17191c);-webkit-tap-highlight-color:transparent;}',
-    '#xxj-cdc .xxj-cdc-top{display:flex;align-items:center;justify-content:space-between;flex:none;}',
+    /* ===== 桌面：一条横着的倒数日小组件 ===== */
+    '.polaroid-board{display:none !important;}',
+    '.layout-shell>.after-polaroid{margin-top:9px !important;}',
+    '#app-grid{margin-top:0 !important;}',
+    '#xxj-cdc{display:flex;flex-direction:column;width:100%;margin:0;padding:11px 13px 10px;text-align:left;',
+    'cursor:pointer;border-radius:20px;border:1px solid var(--line,rgba(255,255,255,.10));background:var(--bg-card,#fff);',
+    'box-shadow:0 4px 16px -6px rgba(0,0,0,.10);font-family:inherit;color:var(--text-main,#17191c);',
+    '-webkit-tap-highlight-color:transparent;}',
+    '#xxj-cdc .xxj-cdc-top{display:flex;align-items:center;justify-content:space-between;flex:none;margin-bottom:7px;}',
     '#xxj-cdc .xxj-cdc-lab{font-family:"Space Mono",ui-monospace,monospace;font-size:7px;letter-spacing:.16em;',
     'text-transform:uppercase;color:var(--text-sub,#6d727b);opacity:.8;}',
     '#xxj-cdc .xxj-cdc-plus{font-size:11px;color:var(--accent,#5b7fa6);opacity:.85;line-height:1;}',
-    '#xxj-cdc .xxj-cdc-mid{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;}',
-    '#xxj-cdc .xxj-cdc-pre{font-size:8.5px;letter-spacing:.1em;color:var(--text-sub,#6d727b);margin-bottom:1px;}',
-    '#xxj-cdc .xxj-cdc-num{font-family:"Space Mono",ui-monospace,monospace;font-size:34px;line-height:.95;',
-    'font-weight:700;color:var(--accent,#5b7fa6);letter-spacing:-.02em;}',
-    '#xxj-cdc .xxj-cdc-unit{font-size:9px;color:var(--text-sub,#6d727b);margin-left:3px;letter-spacing:.08em;}',
-    '#xxj-cdc .xxj-cdc-name{font-size:10px;line-height:1.35;margin-top:3px;max-height:2.7em;overflow:hidden;',
-    'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none;}',
-    '#xxj-cdc .xxj-cdc-date{font-family:"Space Mono",ui-monospace,monospace;font-size:7.5px;letter-spacing:.06em;',
-    'color:var(--text-sub,#6d727b);opacity:.75;margin-top:2px;flex:none;}',
-    '#xxj-cdc.is-empty .xxj-cdc-mid{justify-content:center;align-items:flex-start;}',
-    '#xxj-cdc.is-empty .xxj-cdc-name{color:var(--text-sub,#6d727b);font-size:10.5px;white-space:normal;line-height:1.55;}',
+    '#xxj-cdc .xxj-cdc-rows{display:flex;flex-direction:column;gap:0;flex:none;}',
+    '#xxj-cdc .xxj-cdc-r{display:flex;align-items:center;gap:8px;padding:6px 0;}',
+    '#xxj-cdc .xxj-cdc-r+.xxj-cdc-r{border-top:1px solid rgba(var(--tint-rgb,58,92,137),.12);}',
+    '#xxj-cdc .xxj-cdc-rl{flex:1;min-width:0;}',
+    '#xxj-cdc .xxj-cdc-rl b{display:block;font-size:11.5px;font-weight:500;line-height:1.3;',
+    'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '#xxj-cdc .xxj-cdc-rl i{display:block;font-style:normal;font-size:8.5px;letter-spacing:.04em;',
+    'color:var(--text-sub,#6d727b);margin-top:2px;}',
+    '#xxj-cdc .xxj-cdc-rr{flex:none;text-align:right;display:flex;align-items:baseline;gap:2px;}',
+    '#xxj-cdc .xxj-cdc-rr em{font-family:"Space Mono",ui-monospace,monospace;font-style:normal;font-size:20px;',
+    'line-height:1;color:var(--accent,#5b7fa6);}',
+    '#xxj-cdc .xxj-cdc-rr i{font-style:normal;font-size:8.5px;color:var(--text-sub,#6d727b);}',
+    '#xxj-cdc .xxj-cdc-more{font-size:8.5px;color:var(--text-sub,#6d727b);opacity:.7;margin-top:6px;flex:none;',
+    'letter-spacing:.04em;}',
+    '#xxj-cdc.is-empty .xxj-cdc-rows{padding:2px 0 4px;}',
+    '#xxj-cdc.is-empty .xxj-cdc-name{font-size:10.5px;color:var(--text-sub,#6d727b);line-height:1.5;}',
+    'body.dark #xxj-cdc{background:rgba(26,31,39,.72);}',
 
     /* ===== App 界面 ===== */
     '.xxj-cd{position:fixed;inset:0;z-index:76;display:none;flex-direction:column;',
@@ -184,7 +174,6 @@
     'padding:9px 18px;border-radius:11px;cursor:pointer;font-family:inherit;}',
     '.xxj-cd-tip{font-size:10.5px;color:var(--text-sub,#6d727b);opacity:.72;line-height:1.7;margin-top:12px;}',
     'body.dark #xxj-cdc{background:rgba(26,31,39,.72);}',
-    'body.dark .xxj-wrow>.polaroid-board{background:rgba(26,31,39,.72);}'
   ].join('');
 
   function injectCss() {
@@ -195,45 +184,56 @@
     document.head.appendChild(s);
   }
 
+  function sortedRows() {
+    var rows = D.items.map(function (it) { return { it: it, c: compute(it) }; })
+      .filter(function (x) { return x.c; });
+    rows.sort(function (a, b) {
+      var sa = (a.c.prefix === '还有' || a.c.prefix === '就是') ? a.c.big : a.c.big + 100000;
+      var sb = (b.c.prefix === '还有' || b.c.prefix === '就是') ? b.c.big : b.c.big + 100000;
+      return sa - sb;
+    });
+    return rows;
+  }
+
   /* ---------- 桌面小组件 ---------- */
   function renderCard() {
     var el = document.getElementById('xxj-cdc');
     if (!el) return;
-    var pick = pickOne();
-    if (!pick) {
+    var rows = sortedRows();
+    if (!rows.length) {
       el.classList.add('is-empty');
       el.innerHTML = '<span class="xxj-cdc-top"><span class="xxj-cdc-lab">Countdown</span>'
         + '<span class="xxj-cdc-plus">＋</span></span>'
-        + '<span class="xxj-cdc-mid"><span class="xxj-cdc-name">还没有记着哪个日子</span>'
-        + '<span class="xxj-cdc-date">生日 · 纪念日 · 倒数都行</span></span>';
+        + '<span class="xxj-cdc-rows"><span class="xxj-cdc-name">还没有记着哪个日子 · 点开加一个</span></span>';
       return;
     }
     el.classList.remove('is-empty');
-    var c = pick.c;
-    el.innerHTML = '<span class="xxj-cdc-top"><span class="xxj-cdc-lab">Countdown</span>'
-      + '<span class="xxj-cdc-plus">＋</span></span>'
-      + '<span class="xxj-cdc-mid"><span class="xxj-cdc-pre">' + esc(c.prefix) + '</span>'
-      + '<span><span class="xxj-cdc-num">' + c.big + '</span><span class="xxj-cdc-unit">天</span></span></span>'
-      + '<span class="xxj-cdc-name">' + esc(pick.it.name || '') + '</span>'
-      + '<span class="xxj-cdc-date">' + esc(c.dateText) + '</span>';
+    var show = rows.slice(0, 3);
+    var html = '<span class="xxj-cdc-top"><span class="xxj-cdc-lab">Countdown</span>'
+      + '<span class="xxj-cdc-plus">＋</span></span><span class="xxj-cdc-rows">';
+    html += show.map(function (x) {
+      return '<span class="xxj-cdc-r"><span class="xxj-cdc-rl"><b>' + esc(x.it.name || '未命名') + '</b>'
+        + '<i>' + esc(x.c.prefix) + ' · ' + esc(x.c.dateText) + (x.c.mode === 'yearly' ? ' · 每年' : '')
+        + '</i></span><span class="xxj-cdc-rr"><em>' + x.c.big + '</em><i>天</i></span></span>';
+    }).join('');
+    html += '</span>';
+    if (rows.length > show.length) {
+      html += '<span class="xxj-cdc-more">还有 ' + (rows.length - show.length) + ' 个 · 点开看全部</span>';
+    }
+    el.innerHTML = html;
   }
 
   function buildRow() {
     var board = document.querySelector('.polaroid-board');
-    if (!board) return false;
-    if (document.getElementById('xxj-wrow')) return true;
-    var row = document.createElement('div');
-    row.className = 'xxj-wrow';
-    row.id = 'xxj-wrow';
-
+    if (!board || !board.parentNode) return false;
+    if (document.getElementById('xxj-cdc')) return true;
     var card = document.createElement('button');
     card.type = 'button';
     card.id = 'xxj-cdc';
     card.setAttribute('aria-label', '倒数日');
-
-    board.parentNode.insertBefore(row, board);
-    row.appendChild(board);
-    row.appendChild(card);
+    var after = document.querySelector('.after-polaroid');
+    if (after && after.parentNode === board.parentNode) board.parentNode.insertBefore(card, after);
+    else board.parentNode.insertBefore(card, board.nextSibling);
     renderCard();
     return true;
   }
@@ -253,17 +253,6 @@
       + '<div class="xxj-cd-body" id="xxj-cd-body"></div>';
     document.body.appendChild(el);
     return el;
-  }
-
-  function sortedRows() {
-    var rows = D.items.map(function (it) { return { it: it, c: compute(it) }; })
-      .filter(function (x) { return x.c; });
-    rows.sort(function (a, b) {
-      var sa = (a.c.prefix === '还有' || a.c.prefix === '就是') ? a.c.big : a.c.big + 100000;
-      var sb = (b.c.prefix === '还有' || b.c.prefix === '就是') ? b.c.big : b.c.big + 100000;
-      return sa - sb;
-    });
-    return rows;
   }
 
   function render() {
@@ -453,8 +442,7 @@
   var timer = setInterval(function () {
     tries++;
     boot();
-    if (document.getElementById('xxj-wrow') && document.getElementById('xxj-cdc')
-      && document.querySelector('#app-grid .xxj-pager')) {
+    if (document.getElementById('xxj-cdc') && document.querySelector('#app-grid .xxj-pager')) {
       clearInterval(timer);
     }
     if (tries > 60) clearInterval(timer);
