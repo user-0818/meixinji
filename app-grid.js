@@ -11,6 +11,7 @@
  *  ─ v9 调整：已装成 App 时不再主动请求全屏（不弹系统提示）
  *  ─ v10 新增：「学习」App（移植自茶茶机版本，七科：语数英地可排任务＋监督员，理化生只留角色留下的材料）
  *  ─ v10 调整：学习占原「表情包」格位，表情包移到第二页首格
+ *  ─ v11 调整：音乐挪到第一页（占原「人设」格位），人设移到第二页；新增「倒数日」（第二页）
  *
  *  用法：仓库根目录放本文件；index.html 的 <head> 里加一行
  *         <script src="app-grid.js"></script>
@@ -20,16 +21,17 @@
     ["聊天", "ph-chat-circle-text"],
     ["查岗", "ph-device-mobile-camera"],
     ["关系", "ph-heart-straight"],
-    ["人设", "ph-identification-card"],
+    ["音乐", "ph-music-notes"],
     ["漫游", "ph-footprints"],
     ["世界书", "ph-book-open-text"],
     ["论坛", "ph-chats-circle"],
     ["学习", "ph-notebook"],
+    ["人设", "ph-identification-card"],
     ["表情包", "ph-smiley"],
     ["装扮", "ph-paint-brush"],
     ["设置", "ph-gear-six"],
     ["备份", "ph-archive-box"],
-    ["音乐", "ph-music-notes"]
+    ["倒数日", "ph-calendar"]
   ];
   var PER_PAGE = 8;
   var SLIDE = 20;      /* 侧滑位移量 px */
@@ -256,6 +258,10 @@
     '音乐': function () {
       if (typeof window.xxjMusicOpen === 'function') window.xxjMusicOpen();
       else toast('音乐模块未加载');
+    },
+    '倒数日': function () {
+      if (typeof window.xxjCdOpen === 'function') window.xxjCdOpen();
+      else toast('倒数日模块未加载');
     }
   };
 
