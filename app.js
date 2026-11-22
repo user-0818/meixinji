@@ -44030,6 +44030,9 @@ function buildChatSystemPrompt(opts) {
           promptLog
         })),
     char.summary ? `[角色设定 · 摘要]\n${stRepl(String(char.summary))}` : "",
+    String(char.realName || "").trim()
+      ? `[角色设定 · 真名（不随口说）]\n真名：${stRepl(String(char.realName).trim())}。对外和日常一律用「${stRepl(String(char.displayName || "").trim()) || "网名"}」这个网名/显示名自称，别人也这么叫你；只有正式场合、填表、老师或家人叫全名、对方明确问起、或需要身份证明时才用真名，且用的时候说明一句这是真名。不要拿真名当日常自称，也别把网名和真名混着叫成两个人。`
+      : "",
     String(char.aliases || "").trim()
       ? `[角色设定 · 称呼与别名]\n${stRepl(String(char.aliases).trim())}`
       : "",
@@ -49739,6 +49742,7 @@ function renderUserMaskRosterInner() {
 function emptyCharPersona() {
   return {
     displayName: "",
+    realName: "",
     aliases: "",
     summary: "",
     tags: "",
@@ -50189,6 +50193,7 @@ function pickCharPersonaBody(x) {
   );
   return {
     displayName: x.displayName,
+    realName: x.realName != null ? String(x.realName).trim().slice(0, 40) : "",
     aliases: x.aliases,
     summary: x.summary,
     tags: x.tags,
@@ -50650,6 +50655,7 @@ function applyCharFieldsToForm() {
   const p = readCharPersona();
   const map = [
     ["char-display-name", p.displayName],
+    ["char-real-name", p.realName],
     ["char-aliases", p.aliases],
     ["char-summary", p.summary],
     ["char-tags", p.tags],
@@ -50780,6 +50786,7 @@ function collectCharPersonaFromForm() {
       : "";
   return {
     displayName: val("char-display-name"),
+    realName: val("char-real-name").slice(0, 40),
     aliases: val("char-aliases"),
     summary: val("char-summary"),
     tags: val("char-tags"),
