@@ -392,6 +392,57 @@
     }
   }
 
+
+  /* ===== 让角色知道这些日子：给每次 AI 请求垫一条 [日子] 系统消息 ===== */
+  var WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+  function dateIso(dt) {
+    return String(dt.getFullYear()) + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
+  }
+
+  function contextLine() {
+    if (!D.items.length) return '';
+    var rows = sortedRows();
+    if (!rows.length) return '';
+    var t = today();
+    var parts = rows.slice(0, 6).map(function (x) {
+      var tail = '（' + dateIso(x.c.target) + (x.c.mode === 'yearly' ? '，每年' : '') + '）';
+      return (x.it.name || '未命名') + ' ' + x.c.prefix + x.c.big + '天' + tail;
+    });
+    return '[日子] 今天 ' + dateIso(t) + '（' + WEEK[t.getDay()] + '）。'
+      + '用户（和你）在桌面上记着这些日子：' + parts.join('；') + '。'
+      + '聊到、问起或者寒暄时，可以自然地提一句（比如还有几天、过了多久），'
+      + '但不要机械罗列、不要每次都提。';
+  }
+
+  function installContextInject() {
+    if (window.__xxjCdFetch) return;
+    var orig = window.fetch;
+    if (!orig) return;
+    window.__xxjCdFetch = true;
+    window.fetch = function (input, init) {
+      try {
+        var url = typeof input === 'string' ? input : (input && input.url) || '';
+        if (/\/chat\/completions/.test(url) && init && typeof init.body === 'string') {
+          var line = contextLine();
+          if (line) {
+            var body = JSON.parse(init.body);
+            if (body && Array.isArray(body.messages)) {
+              var has = body.messages.some(function (m) {
+                return m && typeof m.content === 'string' && m.content.indexOf('[日子]') === 0;
+              });
+              if (!has) {
+                body.messages.unshift({ role: 'system', content: line });
+                init = Object.assign({}, init, { body: JSON.stringify(body) });
+              }
+            }
+          }
+        }
+      } catch (e) {}
+      return orig.call(this, input, init);
+    };
+  }
+
   /* ---------- 网格兜底：万一 app-grid 的 APPS 还没带「倒数日」 ---------- */
   function addTile() {
     var grid = document.getElementById('app-grid');
@@ -427,12 +478,14 @@
 
   /* ---------- 启动 ---------- */
   window.xxjCdOpen = openApp;
+  window.xxjCdContextLine = function () { load(); return contextLine(); };
 
   function boot() {
     injectCss();
     load();
     buildRow();
     bind();
+    installContextInject();
     addTile();
     bindTile();
     renderCard();
