@@ -1,0 +1,326 @@
+/* ============================================================
+   forum-dark.css —— 广场（论坛）夜间模式
+   · forum.css 全是写死的浅色值（#fff / #f5f5f5 / #1a1a1a），不会跟着
+     body.dark 变，所以这里逐块覆盖一遍。
+   · 选择器都带 body.dark + #forum-screen，优先级高于 forum.css 的
+     `#forum-screen .xxx`，且挂在其后，稳定生效。
+   · 配色对齐主站深色主题：底 #101113 / 卡 #232529 / 线 #2f3136
+     / 主字 #f0f2f6 / 次字 #a2a7b1 / 强调 #5b7fa6
+   ============================================================ */
+
+/* ---------- 底板 ---------- */
+body.dark #forum-screen { background: #101113 !important; color: #f0f2f6; color-scheme: dark; }
+body.dark #forum-screen .forum-app { background: #101113; }
+
+/* ---------- 顶栏 ---------- */
+body.dark #forum-screen .forum-wx-wechat-topbar {
+  background: rgba(16, 17, 19, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+body.dark #forum-screen .forum-wx-wechat-back { color: #dfe9f5; }
+body.dark #forum-screen .forum-wx-wechat-back:active { background: rgba(255, 255, 255, 0.08); }
+body.dark #forum-screen .forum-wx-wechat-kicker { color: #7f8794; }
+body.dark #forum-screen .forum-wx-wechat-title { color: #f5f7fa; }
+body.dark #forum-screen .forum-wx-wechat-ico { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
+body.dark #forum-screen .forum-wx-wechat-ico--light { background: #232529; color: #dfe9f5; }
+body.dark #forum-screen .forum-wx-wechat-ico--dark { background: #dfe9f5; color: #101113; }
+
+/* ---------- 三个面板的底 ---------- */
+body.dark #forum-screen .forum-wx-scroll,
+body.dark #forum-screen .forum-wx-chat-list,
+body.dark #forum-screen .forum-wx-chat-row { background: #101113; }
+body.dark #forum-screen .forum-wx-list-scroll,
+body.dark #forum-screen .forum-feed-scroll,
+body.dark #forum-screen .forum-profile-scroll { background: #101113; }
+
+/* ---------- 板块条 ---------- */
+body.dark #forum-screen .forum-sector-chip {
+  border-color: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
+  color: #a2a7b1;
+}
+body.dark #forum-screen .forum-sector-chip.is-active {
+  background: #5b7fa6;
+  border-color: #5b7fa6;
+  color: #fff;
+}
+body.dark #forum-screen .forum-sector-wb-banner {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #a2a7b1;
+}
+body.dark #forum-screen .forum-sector-wb-banner i { color: #8b93a1; }
+
+/* ---------- 帖子卡 ---------- */
+body.dark #forum-screen .forum-feed-card {
+  background: rgba(35, 37, 41, 0.86);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+}
+body.dark #forum-screen .forum-feed-author-text strong { color: #f0f2f6; }
+body.dark #forum-screen .forum-feed-author-text time { color: #7f8794; }
+body.dark #forum-screen .forum-feed-av {
+  box-shadow: 0 0 0 2px #232529, 0 0 0 3px rgba(255, 255, 255, 0.10);
+}
+body.dark #forum-screen .forum-feed-media,
+body.dark #forum-screen .forum-feed-av--img { background: #1b1e23; }
+body.dark #forum-screen .forum-feed-act { color: #b7bec9; }
+body.dark #forum-screen .forum-feed-act.is-liked { color: #f0666b; }
+body.dark #forum-screen .forum-feed-act.is-saved { color: #f0b13e; }
+body.dark #forum-screen .forum-feed-likes { color: #dfe9f5; }
+body.dark #forum-screen .forum-feed-body { color: #c8cfd9; }
+body.dark #forum-screen .forum-feed-caption { color: #c8cfd9; }
+body.dark #forum-screen .forum-feed-caption strong { color: #f0f2f6; }
+
+/* 转发块 */
+body.dark #forum-screen .forum-feed-repost-inner {
+  background: #1b1e23;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+body.dark #forum-screen .forum-feed-repost-thumb { background: #232529; }
+body.dark #forum-screen .forum-feed-repost-text p { color: #a2a7b1; }
+body.dark #forum-screen .forum-feed-repost-text strong { color: #f0f2f6; }
+body.dark #forum-screen .forum-feed-repost-nested {
+  background: #15181c;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+body.dark #forum-screen .forum-feed-repost-nested p { color: #8b93a1; }
+
+/* 话题标签 / 评论区 */
+body.dark #forum-screen .forum-feed-tags span { color: #8fb0d0; }
+body.dark #forum-screen .forum-feed-cmts-more { color: #7f8794; }
+body.dark #forum-screen .forum-feed-cmt { color: #a2a7b1; }
+body.dark #forum-screen .forum-feed-cmt strong { color: #dfe9f5; }
+body.dark #forum-screen .forum-feed-compose { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark #forum-screen .forum-feed-compose-input { color: #dfe9f5; }
+body.dark #forum-screen .forum-feed-compose-input::placeholder { color: #5f6673; }
+body.dark #forum-screen .forum-feed-compose-post { color: #8fc0ea; }
+
+/* 空态 */
+body.dark #forum-screen .forum-feed-empty,
+body.dark #forum-screen .forum-profile-posts-empty {
+  background: rgba(35, 37, 41, 0.72);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+body.dark #forum-screen .forum-wx-empty-title { color: #a2a7b1; }
+body.dark #forum-screen .forum-wx-empty-desc { color: #6f7680; }
+body.dark #forum-screen .forum-profile-posts-empty i { color: #4d545f; }
+body.dark #forum-screen .forum-profile-posts-empty p { color: #8b93a1; }
+body.dark #forum-screen .forum-profile-posts-empty span { color: #6f7680; }
+
+/* ---------- 私信列表 ---------- */
+body.dark #forum-screen .forum-wx-chat-row-wrap { border-bottom-color: rgba(255, 255, 255, 0.06); }
+body.dark #forum-screen .forum-wx-chat-row:active { background: rgba(255, 255, 255, 0.06); }
+body.dark #forum-screen .forum-wx-chat-badge { border-color: #101113; }
+body.dark #forum-screen .forum-wx-chat-top strong { color: #f0f2f6; }
+body.dark #forum-screen .forum-wx-chat-top time { color: #5f6673; }
+body.dark #forum-screen .forum-wx-chat-preview { color: #6f7680; }
+body.dark #forum-screen .forum-wx-chat-row.is-unread .forum-wx-chat-preview { color: #a2a7b1; }
+body.dark #forum-screen .forum-wx-section-label { color: #7f8794; }
+body.dark #forum-screen .forum-wx-notif-block { background: #101113; }
+body.dark #forum-screen .forum-wx-notif-row {
+  background: rgba(35, 37, 41, 0.9);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+body.dark #forum-screen .forum-wx-notif-top strong { color: #f0f2f6; }
+body.dark #forum-screen .forum-wx-notif-top time { color: #5f6673; }
+body.dark #forum-screen .forum-wx-notif-text { color: #8b93a1; }
+
+/* ---------- 我的 ---------- */
+body.dark #forum-screen .forum-profile-head-card {
+  background: rgba(35, 37, 41, 0.86);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+}
+body.dark #forum-screen .forum-profile-name-text { color: #f0f2f6; }
+body.dark #forum-screen .forum-profile-name-btn i { color: #5f6673; }
+body.dark #forum-screen .forum-profile-name-edit,
+body.dark #forum-screen .forum-profile-id-edit {
+  background: #1b1e23;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #dfe9f5;
+}
+body.dark #forum-screen .forum-profile-name-edit:focus {
+  border-color: rgba(143, 192, 234, 0.6);
+  box-shadow: 0 0 0 3px rgba(143, 192, 234, 0.12);
+}
+body.dark #forum-screen .forum-profile-id,
+body.dark #forum-screen .forum-profile-id-text { color: #7f8794; }
+body.dark #forum-screen .forum-profile-id-btn i { color: #4d545f; }
+body.dark #forum-screen .forum-profile-stats { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark #forum-screen .forum-profile-stats strong { color: #f0f2f6; }
+body.dark #forum-screen .forum-profile-stats span { color: #7f8794; }
+body.dark #forum-screen .forum-profile-section-title { color: #8b93a1; }
+body.dark #forum-screen .forum-profile-post-row {
+  background: rgba(35, 37, 41, 0.86);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+}
+body.dark #forum-screen .forum-profile-post-row:active { background: #262a2f; }
+body.dark #forum-screen .forum-profile-post-text { color: #c8cfd9; }
+body.dark #forum-screen .forum-profile-post-meta { color: #7f8794; }
+
+/* ---------- 底部 dock ---------- */
+body.dark #forum-screen .forum-dock {
+  background: #17191d;
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+body.dark #forum-screen .forum-dock-dot { border-color: #17191d; }
+
+/* ---------- 帖子详情 ---------- */
+body.dark #forum-screen .forum-detail { background: #101113; }
+body.dark #forum-screen .forum-detail-scroll { background: #101113; }
+body.dark #forum-screen .forum-comments-block { background: #101113; }
+body.dark #forum-screen .forum-comments-title { color: #7f8794; }
+body.dark #forum-screen .forum-comment { border-bottom-color: rgba(255, 255, 255, 0.06); }
+body.dark #forum-screen .forum-comment-name { color: #f0f2f6; }
+body.dark #forum-screen .forum-comment-text { color: #a2a7b1; }
+body.dark #forum-screen .forum-comment-av--img { background: #1b1e23; }
+body.dark #forum-screen .forum-detail-compose {
+  background: rgba(23, 25, 29, 0.92);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+body.dark #forum-screen .forum-detail-input {
+  background: #1b1e23;
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #dfe9f5;
+}
+body.dark #forum-screen .forum-detail-input::placeholder { color: #5f6673; }
+body.dark #forum-screen .forum-detail-send { background: #5b7fa6; color: #fff; }
+body.dark #forum-screen .forum-detail-tool {
+  background: #1b1e23;
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #a2a7b1;
+}
+body.dark #forum-screen .forum-detail-tool:active { background: #24282e; }
+
+/* ---------- 私聊窗口（微信风） ---------- */
+body.dark #forum-screen .forum-wx-chat-header {
+  background: rgba(23, 25, 29, 0.9);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+body.dark #forum-screen .forum-wx-chat-header-back { color: #dfe9f5; }
+body.dark #forum-screen .forum-wx-chat-header-back:active { background: rgba(255, 255, 255, 0.08); }
+body.dark #forum-screen .forum-wx-chat-header-peer:active { background: rgba(255, 255, 255, 0.05); }
+body.dark #forum-screen .forum-wx-chat-header-name { color: #f0f2f6; }
+body.dark #forum-screen .forum-wx-chat-header-status { color: #7f8794; }
+body.dark #forum-screen .forum-wx-subheader {
+  background: rgba(23, 25, 29, 0.9);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+body.dark #forum-screen .forum-wx-subheader-back { color: rgba(223, 233, 245, 0.6); }
+body.dark #forum-screen .forum-wx-subheader-back:active {
+  color: #dfe9f5;
+  background: rgba(255, 255, 255, 0.08);
+}
+body.dark #forum-screen .forum-wx-subheader-title { color: #f0f2f6; }
+body.dark #forum-screen .forum-dm { background: #0c0e11; }
+body.dark #forum-screen .forum-dm-id-banner { background: rgba(255, 255, 255, 0.06); color: #8b93a1; }
+body.dark #forum-screen .forum-dm-system { color: #7f8794; }
+body.dark #forum-screen .forum-dm-sender { color: #7f8794; }
+body.dark #forum-screen .forum-dm-bubble:not(.is-me) { background: #232529; color: #f0f2f6; }
+body.dark #forum-screen .forum-dm-time { color: #5f6673; }
+body.dark #forum-screen .forum-dm-typing i { background: #7f8794; }
+body.dark #forum-screen .forum-dm-compose {
+  background: #101113;
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+body.dark #forum-screen .forum-dm-input-wrap { background: #232529; }
+body.dark #forum-screen .forum-dm-input { color: #f0f2f6; }
+body.dark #forum-screen .forum-dm-input::placeholder { color: #5f6673; }
+body.dark #forum-screen .forum-dm-send { background: #232529; color: #7f8794; }
+
+/* ---------- 发帖 / 板块设置 弹层 ---------- */
+body.dark #forum-screen .forum-compose-sheet,
+body.dark #forum-screen .forum-sector-sheet {
+  background: rgba(30, 33, 37, 0.96);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+}
+body.dark #forum-screen .forum-compose-handle { background: rgba(255, 255, 255, 0.18); }
+body.dark #forum-screen .forum-compose-title,
+body.dark #forum-screen .forum-sector-sheet-title { color: #f0f2f6; }
+body.dark #forum-screen .forum-compose-close {
+  background: #232529;
+  color: #a2a7b1;
+}
+body.dark #forum-screen .forum-compose-input,
+body.dark #forum-screen .forum-sector-wb-search,
+body.dark #forum-screen .forum-sector-custom-prompt,
+body.dark #forum-screen .forum-num-input,
+body.dark #forum-screen .forum-ai-select {
+  background: #1b1e23;
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #dfe9f5;
+}
+body.dark #forum-screen .forum-compose-input::placeholder,
+body.dark #forum-screen .forum-sector-wb-search::placeholder { color: #5f6673; }
+body.dark #forum-screen .forum-compose-submit,
+body.dark #forum-screen .forum-sector-sheet-save {
+  background: #5b7fa6;
+  color: #fff;
+}
+body.dark #forum-screen .forum-compose-mode,
+body.dark #forum-screen .forum-gen-chip,
+body.dark #forum-screen .forum-sector-sheet-tab {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #a2a7b1;
+}
+body.dark #forum-screen .forum-compose-mode.is-active,
+body.dark #forum-screen .forum-gen-chip.is-active,
+body.dark #forum-screen .forum-sector-sheet-tab.is-editing,
+body.dark #forum-screen .forum-sector-wb-chip.is-on {
+  background: #5b7fa6;
+  border-color: #5b7fa6;
+  color: #fff;
+}
+body.dark #forum-screen .forum-compose-media-btn {
+  background: #1b1e23;
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #8b93a1;
+}
+body.dark #forum-screen .forum-sector-add-btn { color: #a2a7b1; }
+body.dark #forum-screen .forum-sector-del-btn {
+  background: rgba(185, 28, 28, 0.16);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #f87171;
+}
+body.dark #forum-screen .forum-sector-sheet-hint,
+body.dark #forum-screen .forum-sector-sheet-label,
+body.dark #forum-screen .forum-sector-wb-empty,
+body.dark #forum-screen .forum-sector-wb-count,
+body.dark #forum-screen .forum-cast-empty,
+body.dark #forum-screen .forum-api-key-note,
+body.dark #forum-screen .forum-api-status,
+body.dark #forum-screen .forum-sector-api-entry-meta { color: #7f8794; }
+body.dark #forum-screen .forum-sector-wb-chip {
+  background: #232529;
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #a2a7b1;
+}
+body.dark #forum-screen .forum-sector-wb-chip-badge { background: rgba(255, 255, 255, 0.10); color: #8b93a1; }
+body.dark #forum-screen .forum-sector-divider { background: rgba(255, 255, 255, 0.08); }
+body.dark #forum-screen .forum-toggle-row,
+body.dark #forum-screen .forum-check-row { color: #c8cfd9; }
+body.dark #forum-screen .forum-range-row { color: #8b93a1; }
+body.dark #forum-screen .forum-refresh-sector-name { color: #f0f2f6; }
+body.dark #forum-screen .forum-cast-row {
+  background: #232529;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+body.dark #forum-screen .forum-cast-row.is-on {
+  border-color: #8fc0ea;
+  background: rgba(143, 192, 234, 0.12);
+}
+body.dark #forum-screen .forum-cast-av--img { background: #1b1e23; }
+body.dark #forum-screen .forum-cast-name { color: #f0f2f6; }
+body.dark #forum-screen .forum-cast-row--pick .forum-share-pick-go { color: #7f8794; }
+body.dark #forum-screen .forum-sector-api-entry {
+  background: #1b1e23;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+body.dark #forum-screen .forum-sector-api-entry-main { color: #f0f2f6; }
+
+/* 弹层遮罩稍重一点，深色下才有层次 */
+body.dark #forum-screen .forum-compose-backdrop,
+body.dark #forum-screen .forum-sector-sheet-backdrop { background: rgba(0, 0, 0, 0.6); }
