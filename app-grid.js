@@ -28,7 +28,8 @@
     ["表情包", "ph-smiley"],
     ["装扮", "ph-paint-brush"],
     ["设置", "ph-gear-six"],
-    ["备份", "ph-archive-box"]
+    ["备份", "ph-archive-box"],
+    ["音乐", "ph-music-notes"]
   ];
   var PER_PAGE = 8;
   var SLIDE = 20;      /* 侧滑位移量 px */
@@ -251,7 +252,11 @@
     '装扮': function () { openWardrobeScreen(); },
     '备份': function () { openBackupZipModal(); },
     '表情包': function () { openStickerScreen('manage'); },
-    '学习': function () { openStudy(); }
+    '学习': function () { openStudy(); },
+    '音乐': function () {
+      if (typeof window.xxjMusicOpen === 'function') window.xxjMusicOpen();
+      else toast('音乐模块未加载');
+    }
   };
 
   function bindClicks() {
