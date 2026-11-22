@@ -303,8 +303,11 @@
     }, { passive: true, capture: true });
   }
 
-  /* 公开出去，方便别处调用 */
+  /* 公开出去，方便别处调用（APK 外壳的返回键也走这里） */
   window.xxjGoBack = goBack;
+  window.__xxjGoBack = goBack;
+  window.__xxjLayerOpen = hasLayer;
+  window.xxjLayerOpen = hasLayer;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
   else bind();
