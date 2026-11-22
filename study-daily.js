@@ -90,12 +90,25 @@
     var n = nameOf(w);
     return n.slice(0, 1);
   }
+  var BAK = KEY + '__bak';
+  var readBroken = false;
+
   function load() {
     var d = blank();
-    try {
-      var raw = localStorage.getItem(KEY);
-      if (raw) d = JSON.parse(raw) || d;
-    } catch (e) { d = blank(); }
+    var raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) {}
+    if (raw) {
+      try {
+        d = JSON.parse(raw) || d;
+      } catch (e) {
+        /* 读坏了千万别当空表回写，先试着用上一份备份兜回来 */
+        readBroken = true;
+        try {
+          var b = localStorage.getItem(BAK);
+          if (b) { d = JSON.parse(b) || d; readBroken = false; }
+        } catch (e2) {}
+      }
+    }
     d.cfg = d.cfg || { plan: '18:00', check: '21:30', names: { A: '', B: '' } };
     d.cfg.names = d.cfg.names || { A: '', B: '' };
     d.ranges = d.ranges || {};
@@ -110,7 +123,65 @@
     return d;
   }
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {}
+    if (readBroken) return;                       /* 读坏过就先别写，避免把还能救的东西盖掉 */
+    try {
+      var next = JSON.stringify(D);
+      var prev = localStorage.getItem(KEY);
+      if (prev && prev !== next) localStorage.setItem(BAK, prev);   /* 留一份上一版，最多一份，不涨空间 */
+      localStorage.setItem(KEY, next);
+    } catch (e) {}
+  }
+
+  /* 旧的两套数据（都在 localStorage 里，没被谁删） */
+  function legacyInfo() {
+    var out = { plan: null, study: null };
+    try {
+      var a = localStorage.getItem('xxjPlanV1');
+      if (a) {
+        var o = JSON.parse(a) || {};
+        out.plan = {
+          must: ((o.pool && o.pool.must) || []).length,
+          draw: ((o.pool && o.pool.draw) || []).length,
+          assigns: Object.keys(o.assigns || {}).length,
+          papers: (o.papers || []).length
+        };
+      }
+    } catch (e) {}
+    try {
+      var b = localStorage.getItem('xxjStudyV1');
+      if (b) {
+        var st = JSON.parse(b) || {};
+        var n = 0, m = 0;
+        Object.keys(st.tasks || {}).forEach(function (k) { n += (st.tasks[k] || []).length; });
+        Object.keys(st.mats || {}).forEach(function (k) {
+          Object.keys(st.mats[k] || {}).forEach(function (t) { m += (st.mats[k][t] || []).length; });
+        });
+        out.study = { tasks: n, mats: m };
+      }
+    } catch (e) {}
+    return out;
+  }
+
+  /* 把旧「任务池」并进当前这一科：必做→必做，随机→随机池 */
+  function importLegacy() {
+    var info = legacyInfo();
+    if (!info.plan) { toast('没找到旧的任务池'); return; }
+    var cur = D.ranges[rangeSub] || (D.ranges[rangeSub] = { must: [], pool: [] });
+    var added = 0;
+    try {
+      var o = JSON.parse(localStorage.getItem('xxjPlanV1') || '{}') || {};
+      ((o.pool && o.pool.must) || []).forEach(function (t) {
+        var v = String(t || '').trim();
+        if (v && cur.must.indexOf(v) < 0) { cur.must.push(v); added++; }
+      });
+      ((o.pool && o.pool.draw) || []).forEach(function (x) {
+        var v = String((x && x.t) || x || '').trim();
+        if (v && !cur.pool.some(function (y) { return y.t === v; })) { cur.pool.push({ t: v, u: false }); added++; }
+      });
+    } catch (e) {}
+    readBroken = false;
+    save(); render();
+    toast(added ? '已导入 ' + added + ' 条到' + (SUBJ.filter(function (x) { return x.k === rangeSub; })[0] || {}).n : '旧池里没有能导入的条目');
   }
   function planOf(date) {
     if (!D.plans[date]) {
@@ -495,6 +566,15 @@
     html += '<div class="xxj-st2-add"><input class="xxj-st2-in" data-st2-inpool placeholder="比如：默写十个词">'
       + '<button class="xxj-st2-btn" data-st2-addpool>＋</button></div></div>';
 
+    var lg = legacyInfo();
+    if (lg.plan || lg.study) {
+      html += '<div class="xxj-st2-card"><div class="xxj-st2-h"><b>旧数据还在</b><span>Legacy</span></div>'
+        + '<p class="xxj-st2-sub">原来的「任务池」数据还在这台设备上（没被删），只是这套日程用的是自己的表。'
+        + (lg.plan ? '旧任务池：必做 ' + lg.plan.must + ' 条 · 随机 ' + lg.plan.draw + ' 条 · 记录 ' + lg.plan.assigns + ' 天 · 卷子 ' + lg.plan.papers + ' 张。' : '')
+        + (lg.study ? ' 旧科目清单：任务 ' + lg.study.tasks + ' 条 · 材料 ' + lg.study.mats + ' 份。' : '')
+        + '</p>'
+        + '<div class="xxj-st2-row"><button class="xxj-st2-btn" data-st2-import>导入旧任务池到这一科</button></div></div>';
+    }
     html += '<div class="xxj-st2-card"><div class="xxj-st2-h"><b>时间</b><span>Time</span></div>'
       + '<div class="xxj-st2-row"><span style="font-size:11px">布置</span>'
       + '<input class="xxj-st2-in" data-st2-tplan value="' + esc(D.cfg.plan) + '" placeholder="18:00" style="max-width:80px">'
@@ -559,6 +639,7 @@
         if (view === 'range') { view = 'day'; render(); return; }
         close(); return;
       }
+      if (t.closest('[data-st2-import]')) { importLegacy(); return; }
       var go = t.closest('[data-st2-go]');
       if (go) { view = 'range'; render(); return; }
       if (t.closest('[data-st2-plan]')) {
