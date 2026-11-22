@@ -11,37 +11,41 @@
   var B = window.AndroidBridge;
   if (!B) return;                    /* 浏览器里什么都不做 */
 
+  /* ---------- 1. 后台策略：默认「轻模式」，不挂常驻通知 ----------
+     · light：系统每 15 分钟静默唤醒一次（无常驻通知，可能晚到）
+     · full ：常驻前台服务（最稳，但通知栏会挂一条）
+     想换回常驻：localStorage.setItem('xxj_apk_mode','full') 后重开 App */
   var KEY = 'xxj_bg_keepalive_enabled';
+  var MODE_KEY = 'xxj_apk_mode';
 
-  /* ---------- 1. 后台保活：默认打开 ---------- */
-  function keepAliveOn() {
-    var v = null;
-    try { v = localStorage.getItem(KEY); } catch (e) {}
-    if (v === null) {
-      /* 网页版手机默认关（怕发热）；装了 App 就默认开，否则收不到后台消息 */
-      try { localStorage.setItem(KEY, 'true'); } catch (e) {}
-      return true;
+  function readMode() {
+    try {
+      var m = localStorage.getItem(MODE_KEY);
+      return m === 'full' ? 'full' : 'light';
+    } catch (e) { return 'light'; }
+  }
+
+  function applyMode() {
+    var mode = readMode();
+    /* 网页自己的扫描开关得是开着的，否则后台那条路根本不会被触发 */
+    try {
+      if (localStorage.getItem(KEY) === null) localStorage.setItem(KEY, 'true');
+    } catch (e) {}
+    try { if (B.setMode) B.setMode(mode); } catch (e) {}
+    /* 只有常驻模式才动用网页自己的保活（那段会跑静音音频维持定时器） */
+    if (mode === 'full') {
+      try { if (typeof window.syncBgKeepAliveState === 'function') window.syncBgKeepAliveState(); } catch (e) {}
     }
-    return v !== 'false';
   }
 
-  function syncAlive() {
-    var on = keepAliveOn();
-    try { B.setKeepAlive(on); } catch (e) {}
-    try { if (typeof window.syncBgKeepAliveState === 'function') window.syncBgKeepAliveState(); } catch (e) {}
-  }
-
-  var aliveTimer = setInterval(function () {
+  var modeTimer = setInterval(function () {
     if (document.getElementById('app-grid')) {
-      clearInterval(aliveTimer);
-      syncAlive();
-      /* 用户去设置里关掉 / 打开时，同步给原生 */
-      document.addEventListener('click', function () {
-        setTimeout(syncAlive, 400);
-      }, true);
+      clearInterval(modeTimer);
+      applyMode();
+      document.addEventListener('click', function () { setTimeout(applyMode, 500); }, true);
     }
   }, 500);
-  setTimeout(function () { clearInterval(aliveTimer); }, 60000);
+  setTimeout(function () { clearInterval(modeTimer); }, 60000);
 
   /* ---------- 2. 角色主动消息 → 原生通知 ---------- */
   function hidden() {
