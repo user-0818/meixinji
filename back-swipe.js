@@ -1,27 +1,73 @@
 /* ============================================================
-   back-swipe.js —— 全站「侧滑返回」（像手机一样）
-   · 屏幕左边缘向右滑 → 返回上一层
-     - App 首页 → 返回桌面
-     - App 的二级页 / 弹层 → 返回上一级
-   · 只在有界面打开时生效，桌面上的左右翻页不受影响
+   back-swipe.js —— 全站「侧滑返回」v4
+   · 屏幕左/右边缘往内滑 → 返回上一层
+   · 桌面翻页不受影响；只在有界面打开时生效
+   · v4 修复：层识别不再只看 body 的直接子元素
+     （论坛 / 关系 / 漫游 / 人设 / 查岗 这些屏幕其实挂在 .phone 里，
+       旧版按 body 子元素扫，全漏了 —— 那几个 App 不能侧滑回退就是这原因）
+   · v4：关闭时优先调各模块自己的 closeXxxScreen()，没有才点返回键 / 摘类名
    挂载：index.html <head> 一行 <script src="back-swipe.js"></script>
    ============================================================ */
 (function () {
   'use strict';
 
-  var EDGE = 18;        /* 起手必须从左边缘 18px 内开始 */
+  var EDGE = 18;        /* 起手必须从边缘 18px 内开始 */
   var MIN_DX = 62;      /* 横向至少滑 62px */
   var MAX_DY_RATIO = 0.6;
   var MAX_MS = 900;
 
-  /* ---------- 判断当前有没有"界面"打开 ---------- */
+  /* ---------- 基础判断 ---------- */
   function visible(el) {
-    if (!el) return false;
-    if (el.offsetWidth <= 0 && el.offsetHeight <= 0) return false;
+    if (!el || !el.getBoundingClientRect) return false;
+    var r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return false;
     var cs = getComputedStyle(el);
     return cs.display !== 'none' && cs.visibility !== 'hidden' && +cs.opacity > 0.05;
   }
 
+  function effZ(el) {
+    var z = 0, n = el;
+    while (n && n !== document.body) {
+      var v = parseInt(getComputedStyle(n).zIndex, 10);
+      if (!isNaN(v)) z = Math.max(z, v);
+      n = n.parentElement;
+    }
+    return z;
+  }
+
+  /* 一个「打开的界面」：带 is-open / open 类、铺得够大、真的可见 */
+  function isLayer(el) {
+    if (!el || el.nodeType !== 1 || !el.classList) return false;
+    if (!(el.classList.contains('is-open') || el.classList.contains('open'))) return false;
+    if (el.id === 'app-grid' || el.classList.contains('stage')) return false;
+    if (!visible(el)) return false;
+    var cs = getComputedStyle(el);
+    if (cs.position !== 'fixed' && cs.position !== 'absolute') return false;
+    var r = el.getBoundingClientRect();
+    if (r.width < window.innerWidth * 0.7) return false;
+    if (r.height < window.innerHeight * 0.3) return false;
+    return true;
+  }
+
+  /* 所有打开的界面，层级从高到低（同级时 DOM 靠后的算更上层） */
+  function layers() {
+    var out = [];
+    var all;
+    try { all = document.querySelectorAll('.is-open, .open'); } catch (e) { return out; }
+    for (var i = 0; i < all.length; i++) {
+      if (!isLayer(all[i])) continue;
+      out.push({ el: all[i], z: effZ(all[i]), i: i });
+    }
+    out.sort(function (a, b) { return (b.z - a.z) || (b.i - a.i); });
+    return out;
+  }
+
+  function topLayerEl() {
+    var ls = layers();
+    return ls.length ? ls[0].el : null;
+  }
+
+  /* 学习 / 天气 / 生活 的老逻辑留着（它们有二级页） */
   function studyOpen() {
     var el = document.getElementById('xxj-study');
     return !!(el && el.classList.contains('open'));
@@ -39,117 +85,105 @@
     return el && el.classList.contains('open') ? el : null;
   }
 
-  /* 最上层的可见"层"：z-index 最高的全屏/浮层元素 */
-  function topLayer() {
-    var best = null, bestZ = -1;
-    var all = document.querySelectorAll('body > div, body > section, body > aside, body > main');
-    for (var i = 0; i < all.length; i++) {
-      var el = all[i];
-      if (!visible(el)) continue;
-      var cs = getComputedStyle(el);
-      if (cs.position !== 'fixed' && cs.position !== 'absolute') continue;
-      var z = parseInt(cs.zIndex, 10);
-      if (isNaN(z) || z < 6) continue;        /* 桌面层的层级都很低，不算 */
-
-      if (el.id === 'app-grid') continue;
-      /* 必须真的盖住大部分屏幕，否则不算"打开了一个界面" */
-      var r = el.getBoundingClientRect();
-      if (r.width < window.innerWidth * 0.88 || r.height < window.innerHeight * 0.55) continue;
-      if (z > bestZ) { bestZ = z; best = el; }
-    }
-    return best;
-  }
-
   function hasLayer() {
     if (planOverlay() || studyOpen() || lifeOpen() || weatherOpen()) return true;
-    var t = topLayer();
-    return !!t;
+    return !!topLayerEl();
   }
 
-  /* ---------- 找"返回"控件 ---------- */
-  function backCandidates(root) {
-    var sel = [
-      '[data-pn-back]', '[data-lf-back]', '[data-wx-back]', '[data-back]', '[data-nav-back]',
-      '[data-go-back]', '.xxj-sd-back', '.xxj-lf-back', '.xxj-wx-back',
-      '[class*="appbar-back"]', '[class*="header-back"]', '[class*="nav-back"]',
-      '[class*="back-chip"]', '[class*="back-btn"]', '[class*="backBtn"]',
-      '[class*="-back"][role="button"]',
-      '[aria-label="返回"]', '[aria-label="Back"]'
-    ].join(',');
+  /* ---------- 找模块自己的 close 函数 ---------- */
+  var ALIAS = {
+    'char-lock-screen': 'closeCharLockFocusScreen',
+    'chat-video-call-screen': 'closeChatCallScreen',
+    'checkup-device-screen': 'closeCheckupScreen',
+    'sticker-add-open-screen': 'closeStickerScreen'
+  };
+
+  function camelOf(id) {
+    return String(id).replace(/(^|-)([a-z])/g, function (m, dash, ch) { return ch.toUpperCase(); });
+  }
+
+  function closerFor(el) {
+    var id = el.id || '';
+    if (!id) return null;
+    var names = [];
+    if (ALIAS[id]) names.push(ALIAS[id]);
+    var c = camelOf(id);
+    names.push('close' + c);
+    if (/Screen$/.test(c)) names.push('close' + c.slice(0, -6));
+    for (var i = 0; i < names.length; i++) {
+      var fn = window[names[i]];
+      if (typeof fn === 'function') return fn;
+    }
+    return null;
+  }
+
+  /* ---------- 层内「返回」控件 ---------- */
+  var BACK_SEL = [
+    '[data-back]', '[data-pn-back]', '[data-lf-back]', '[data-wx-back]', '[data-mu-back]',
+    '[data-cd-back]', '[data-nav-back]', '[data-go-back]', '[data-pn-close]',
+    '.xxj-sd-back', '.xxj-lf-back', '.xxj-wx-back', '.xxj-mu-back', '.xxj-cd-back',
+    '[class*="appbar-back"]', '[class*="header-back"]', '[class*="nav-back"]',
+    '[class*="back-chip"]', '[class*="back-btn"]',
+    '[aria-label="返回"]', '[aria-label="Back"]'
+  ].join(',');
+
+  function backControlIn(root) {
     var list = [];
-    try { list = (root || document).querySelectorAll(sel); } catch (e) { list = []; }
-    var out = [];
+    try { list = root.querySelectorAll(BACK_SEL); } catch (e) { list = []; }
     for (var i = 0; i < list.length; i++) {
       var el = list[i];
       if (!visible(el)) continue;
-      var cls = el.className && el.className.baseVal != null ? el.className.baseVal : (el.className || '');
-      if (typeof cls === 'string' && cls.indexOf('backdrop') >= 0) continue;
-      if (el.closest('[data-pn-host]')) continue;
-      out.push(el);
+      var cls = typeof el.className === 'string' ? el.className : '';
+      if (cls.indexOf('backdrop') >= 0) continue;
+      return el;
     }
-    return out;
-  }
-
-  function iconBackCandidates(root) {
-    var out = [];
-    var all = (root || document).querySelectorAll('button, [role="button"], a');
-    for (var i = 0; i < all.length; i++) {
-      var el = all[i];
-      if (!visible(el)) continue;
-      var txt = (el.textContent || '').trim();
-      var ico = el.querySelector ? el.querySelector('i') : null;
+    var btns = root.querySelectorAll('button, [role="button"], a');
+    for (var j = 0; j < btns.length; j++) {
+      var b = btns[j];
+      if (!visible(b)) continue;
+      var txt = (b.textContent || '').trim();
+      var ico = b.querySelector ? b.querySelector('i') : null;
       var icls = ico && typeof ico.className === 'string' ? ico.className : '';
-      if (/^(‹|←|<|«|返回|Back)$/.test(txt) || /(caret-left|arrow-left|arrow-u-left)/.test(icls)) {
-        if (el.closest('[data-pn-host]')) continue;
-        out.push(el);
-      }
+      if (/^(‹|←|<|«|返回|Back)$/.test(txt) || /(caret-left|arrow-left|arrow-u-left)/.test(icls)) return b;
     }
-    return out;
+    return null;
   }
 
-  function depthOf(el) {
-    var z = 0;
-    var n = el;
-    while (n && n !== document.body) {
-      var cs = getComputedStyle(n);
-      var v = parseInt(cs.zIndex, 10);
-      if (!isNaN(v)) z = Math.max(z, v);
-      n = n.parentElement;
-    }
-    return z;
+  function hideLayer(el) {
+    el.classList.remove('is-open', 'open');
+    if (el.hasAttribute('aria-hidden')) el.setAttribute('aria-hidden', 'true');
   }
 
-  function bestBackTarget() {
-    var layer = topLayer();
-    var scopes = layer ? [layer, document] : [document];
-    var best = null, bestZ = -1;
-    for (var s = 0; s < scopes.length; s++) {
-      var cands = backCandidates(scopes[s]).concat(iconBackCandidates(scopes[s]));
-      for (var i = 0; i < cands.length; i++) {
-        var z = depthOf(cands[i]);
-        if (z > bestZ) { bestZ = z; best = cands[i]; }
-      }
-      if (best) break;      /* 找到就不去全站乱找 */
+  function closeOne(target) {
+    if (!target) return null;
+    var closer = closerFor(target);
+    if (closer) {
+      try { closer(); return 'fn:' + (target.id || target.className); } catch (e) {}
     }
-    return best;
+    var btn = backControlIn(target);
+    if (btn) {
+      try { btn.click(); return 'click:' + (target.id || target.className); } catch (e) {}
+    }
+    hideLayer(target);
+    return 'hide:' + (target.id || target.className);
   }
 
   /* ---------- 返回 ---------- */
   function goBack(viaPop) {
-    /* 1) 试卷/详情弹层 */
+    /* 1) 试卷 / 任务池弹层 */
     var ov = planOverlay();
     if (ov) {
       var x = ov.querySelector('[data-pn-close]');
-      if (x) { x.click(); return 'closed:' + 'pn'; }
-      ov.classList.remove('open');
-      return 'closed:pn';
+      if (x) { x.click(); return 'pn:close'; }
+      hideLayer(ov);
+      return 'pn:hide';
     }
 
-    /* 2) 学习 App */
+    /* 2) 学习 App：任务池 → 科目 → 首页 */
     if (studyOpen()) {
       var host = document.querySelector('[data-pn-host]');
       if (host && host.querySelector('[data-pn-back]')) {
-        host.querySelector('[data-pn-back]').click();     /* 任务池 → 首页 */
+        host.querySelector('[data-pn-back]').click();
         return 'study:pool';
       }
       var body = document.getElementById('xxj-sd-body');
@@ -174,23 +208,20 @@
       return 'life:close';
     }
 
-    /* 4) 其它（聊天、设置、论坛…这些由 app.js 生成）：点它自己的返回按钮 */
-    var t = bestBackTarget();
-    if (t) {
-      try {
-        t.click();
-        return 'click:' + (t.className || t.tagName);
-      } catch (e) {}
+    /* 4) 通用：最上层那个打开的界面（不管挂在 body 还是 .phone 里） */
+    var top = topLayerEl();
+    if (top) {
+      var r = closeOne(top);
+      if (r) return r;
     }
 
-    /* 5) 兜底：交给浏览器历史（由 popstate 触发时不再递归调用） */
+    /* 5) 兜底：浏览器历史 */
     if (!viaPop && window.history && history.length > 1) { history.back(); return 'history'; }
     return null;
   }
 
-  /* ---------- 边缘手势（左右两侧都能返回） ---------- */
-  var tracking = false, armed = false, bar = null;
-  var dir = 'left';           /* left：左边缘向右滑；right：右边缘向左滑 */
+  /* ---------- 边缘手势 ---------- */
+  var tracking = false, bar = null, dir = 'left';
   var sx = 0, sy = 0, st = 0;
 
   function mkBar() {
@@ -216,18 +247,15 @@
     return null;
   }
 
-  /* 朝"里面"滑了多少（左右统一成正数） */
   function progress(t) {
-    var d = dir === 'left' ? (t.clientX - sx) : (sx - t.clientX);
-    return d;
+    return dir === 'left' ? (t.clientX - sx) : (sx - t.clientX);
   }
 
   function onStart(e) {
     var t = e.touches ? e.touches[0] : e;
-    if (!t) return;
+    if (!t) { tracking = false; return; }
     var edge = edgeOf(t);
-    if (!edge || !hasLayer()) { armed = false; tracking = false; return; }
-    armed = true;
+    if (!edge || !hasLayer()) { tracking = false; return; }
     tracking = true;
     dir = edge;
     sx = t.clientX; sy = t.clientY; st = Date.now();
@@ -250,7 +278,7 @@
 
   function onEnd(e) {
     if (bar) { bar.style.opacity = '0'; bar.style.width = '3px'; }
-    if (!tracking) { armed = false; return; }
+    if (!tracking) return;
     tracking = false;
     var t = (e.changedTouches && e.changedTouches[0]) || e;
     var p = t ? progress(t) : 0;
@@ -262,20 +290,17 @@
       var r = goBack();
       if (r && navigator.vibrate) { try { navigator.vibrate(8); } catch (err) {} }
     }
-    armed = false;
   }
 
-  /* ---------- 抢回浏览器的"边缘返回手势" ---------- */
   function killOverscroll() {
     if (document.getElementById('xxj-back-css')) return;
-    var st = document.createElement('style');
-    st.id = 'xxj-back-css';
-    st.textContent = 'html,body{overscroll-behavior-x:none!important;overscroll-behavior-y:auto;'
+    var st2 = document.createElement('style');
+    st2.id = 'xxj-back-css';
+    st2.textContent = 'html,body{overscroll-behavior-x:none!important;overscroll-behavior-y:auto;'
       + '-webkit-overflow-scrolling:touch;}';
-    document.head.appendChild(st);
+    document.head.appendChild(st2);
   }
 
-  /* 历史里垫一个挡板：系统返回先吃掉这一层，不会直接退出页面 */
   var guard = 0;
   function armGuard() {
     if (guard) return;
@@ -303,11 +328,14 @@
     }, { passive: true, capture: true });
   }
 
-  /* 公开出去，方便别处调用（APK 外壳的返回键也走这里） */
+  /* 给 APK 外壳的返回键用 */
   window.xxjGoBack = goBack;
   window.__xxjGoBack = goBack;
   window.__xxjLayerOpen = hasLayer;
   window.xxjLayerOpen = hasLayer;
+  window.xxjBackLayers = function () {
+    return layers().map(function (x) { return (x.el.id || x.el.className) + '|z' + x.z; });
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
   else bind();
