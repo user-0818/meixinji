@@ -1,19 +1,21 @@
 /* ============================================================
-   back-swipe.js —— 全站「侧滑返回」v4
+   back-swipe.js —— 全站「侧滑返回」v5
    · 屏幕左/右边缘往内滑 → 返回上一层
    · 桌面翻页不受影响；只在有界面打开时生效
    · v4 修复：层识别不再只看 body 的直接子元素
      （论坛 / 关系 / 漫游 / 人设 / 查岗 这些屏幕其实挂在 .phone 里，
        旧版按 body 子元素扫，全漏了 —— 那几个 App 不能侧滑回退就是这原因）
    · v4：关闭时优先调各模块自己的 closeXxxScreen()，没有才点返回键 / 摘类名
+   · v5：识别范围放宽（show/active/visible 类也算打开）；返回控件识别大幅放宽；
+     点完返回还留着不走 → 400ms 后强制关掉，保证「一划必然退一层」
    挂载：index.html <head> 一行 <script src="back-swipe.js"></script>
    ============================================================ */
 (function () {
   'use strict';
 
-  var EDGE = 18;        /* 起手必须从边缘 18px 内开始 */
-  var MIN_DX = 62;      /* 横向至少滑 62px */
-  var MAX_DY_RATIO = 0.6;
+  var EDGE = 28;        /* 起手必须从边缘 28px 内开始（v5 放宽，指尖更容错） */
+  var MIN_DX = 52;      /* 横向至少滑 52px */
+  var MAX_DY_RATIO = 0.75;
   var MAX_MS = 900;
 
   /* ---------- 基础判断 ---------- */
@@ -35,10 +37,16 @@
     return z;
   }
 
-  /* 一个「打开的界面」：带 is-open / open 类、铺得够大、真的可见 */
+  var OPEN_CLASS = ['is-open', 'open', 'show', 'is-show', 'visible', 'active', 'is-active'];
+
+  /* 一个「打开的界面」：带 open 类、铺得够大、真的可见 */
   function isLayer(el) {
     if (!el || el.nodeType !== 1 || !el.classList) return false;
-    if (!(el.classList.contains('is-open') || el.classList.contains('open'))) return false;
+    var opened = false;
+    for (var ci = 0; ci < OPEN_CLASS.length; ci++) {
+      if (el.classList.contains(OPEN_CLASS[ci])) { opened = true; break; }
+    }
+    if (!opened) return false;
     if (el.id === 'app-grid' || el.classList.contains('stage')) return false;
     if (!visible(el)) return false;
     var cs = getComputedStyle(el);
@@ -53,7 +61,8 @@
   function layers() {
     var out = [];
     var all;
-    try { all = document.querySelectorAll('.is-open, .open'); } catch (e) { return out; }
+    try { all = document.querySelectorAll('.is-open, .open, .show, .is-show, .active, .is-active'); }
+    catch (e) { return out; }
     for (var i = 0; i < all.length; i++) {
       if (!isLayer(all[i])) continue;
       out.push({ el: all[i], z: effZ(all[i]), i: i });
@@ -137,6 +146,19 @@
       if (cls.indexOf('backdrop') >= 0) continue;
       return el;
     }
+    /* v5：任何带 back 字样 / 返回箭头 / aria 返回 的可见元素都算 */
+    var loose = [];
+    try { loose = root.querySelectorAll('button, [role="button"], a, i, span'); } catch (e2) { loose = []; }
+    for (var k = 0; k < loose.length; k++) {
+      var c2 = loose[k];
+      if (!visible(c2)) continue;
+      var cls2 = typeof c2.className === 'string' ? c2.className : '';
+      if (/back/i.test(cls2)) return c2;
+      var al = c2.getAttribute && (c2.getAttribute('aria-label') || '');
+      if (/返回|back/i.test(al)) return c2;
+      var ds = c2.dataset || {};
+      for (var key in ds) { if (/back/i.test(key)) return c2; }
+    }
     var btns = root.querySelectorAll('button, [role="button"], a');
     for (var j = 0; j < btns.length; j++) {
       var b = btns[j];
@@ -150,18 +172,41 @@
   }
 
   function hideLayer(el) {
-    el.classList.remove('is-open', 'open');
+    for (var i = 0; i < OPEN_CLASS.length; i++) el.classList.remove(OPEN_CLASS[i]);
     if (el.hasAttribute('aria-hidden')) el.setAttribute('aria-hidden', 'true');
+  }
+
+  /* 点完返回如果还赖着不走，400ms 后强制摘掉 open 类，保证手势一定有反应 */
+  function forceCloseLater(target) {
+    if (!target) return;
+    setTimeout(function () {
+      try {
+        if (!visible(target)) return;
+        var stillOpen = false;
+        for (var i = 0; i < OPEN_CLASS.length; i++) {
+          if (target.classList.contains(OPEN_CLASS[i])) { stillOpen = true; break; }
+        }
+        if (!stillOpen) return;
+        /* 期间如果有更高层的界面打开（比如点返回进的二级页），就不强关 */
+        var top = topLayerEl();
+        if (top && top !== target) return;
+        var closer = closerFor(target);
+        if (closer) { try { closer(); } catch (e) {} }
+        hideLayer(target);
+      } catch (e) {}
+    }, 400);
   }
 
   function closeOne(target) {
     if (!target) return null;
     var closer = closerFor(target);
     if (closer) {
+      forceCloseLater(target);
       try { closer(); return 'fn:' + (target.id || target.className); } catch (e) {}
     }
     var btn = backControlIn(target);
     if (btn) {
+      forceCloseLater(target);
       try { btn.click(); return 'click:' + (target.id || target.className); } catch (e) {}
     }
     hideLayer(target);
