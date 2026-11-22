@@ -1,36 +1,51 @@
-/* === 顶部标题与按钮分离（xxj 调整，覆盖 forum.css） === */
-.forum-wx-wechat-topbar-inner {
-  height: auto;
-  min-height: 60px;
+/* === 广场顶栏：字母与按钮拉开距离（覆盖 forum.css） ===
+   注意：forum.css 原文用的是 `#forum-screen .xxx`（带 ID，优先级 1,1,0），
+   这里必须同样带 #forum-screen，否则选择器打不过、等于没写。 */
+#forum-screen .forum-wx-wechat-topbar-inner {
+  display: flex;
   align-items: center;
-  gap: 16px;
-  padding: calc(11px + env(safe-area-inset-top, 0px)) 18px 12px;
+  justify-content: space-between;
+  gap: 12px;
+  height: auto;                        /* 关键：原来写死 56px，套上安全区后内容溢出压住标题 */
+  min-height: 58px;
+  box-sizing: border-box;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 18px 14px;
 }
-.forum-wx-wechat-back {
-  margin: 0 4px 0 0;
-  width: 38px;
-  height: 38px;
-  font-size: 1.5rem;
+
+/* 返回键：不再用负 margin 往左挤，也不贴字母 */
+#forum-screen .forum-wx-wechat-back {
+  width: 34px;
+  height: 34px;
+  margin: 0 2px 0 0;
+  font-size: 1.45rem;
+  align-self: flex-end;                /* 让它对齐标题那一行，而不是骑在小字母上上 */
+  margin-bottom: -2px;
 }
-.forum-wx-wechat-brand {
+#forum-screen .forum-wx-wechat-brand {
   flex: 1 1 auto;
   min-width: 0;
-  margin-left: 14px;
-  padding-right: 22px;
+  margin: 0 0 0 8px;                  /* 和返回键之间留出 14px */
+  padding-right: 26px;                 /* 和右边三个圆钮之间留出 26px */
 }
-.forum-wx-wechat-kicker {
-  margin-bottom: 8px;
-  letter-spacing: 0.16em;
+#forum-screen .forum-wx-wechat-kicker {
+  display: block;
+  font-size: 0.6rem;
+  line-height: 1.2;
+  letter-spacing: 0.18em;
+  margin-bottom: 9px;                  /* 小字母和大标题之间拉开 */
 }
-.forum-wx-wechat-title {
-  line-height: 1.12;
+#forum-screen .forum-wx-wechat-title {
+  display: block;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
 }
-.forum-wx-wechat-actions {
-  gap: 12px;
-  padding-left: 10px;
+#forum-screen .forum-wx-wechat-actions {
+  gap: 12px;                           /* 三个圆钮之间也别挨太紧 */
+  padding-left: 14px;
   flex: 0 0 auto;
 }
+
+/* 板块条：给顶栏下方留出呼吸，别压到标题 */
 #forum-screen .forum-sector-row {
-  padding-top: 6px;
-  padding-bottom: 10px;
+  padding: 8px 12px 10px;
 }
